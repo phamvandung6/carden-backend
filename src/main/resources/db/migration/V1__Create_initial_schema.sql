@@ -299,4 +299,4 @@ CREATE INDEX idx_reports_reviewed_by ON reports(reviewed_by_id);
 -- Composite indexes for common queries
 CREATE INDEX idx_decks_user_status ON decks(user_id, deleted_at) WHERE deleted_at IS NULL;
 CREATE INDEX idx_cards_deck_status ON cards(deck_id, deleted_at) WHERE deleted_at IS NULL;
-CREATE INDEX idx_study_states_due_cards ON study_states(user_id, due_date, card_state) WHERE due_date <= CURRENT_TIMESTAMP;
+CREATE INDEX idx_study_states_due_cards ON study_states(user_id, due_date, card_state);

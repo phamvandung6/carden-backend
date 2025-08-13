@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: carden-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: carden_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - carden-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d carden_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: carden-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redispassword
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - carden-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+
+
+  # Mailhog (Email testing)
+  mailhog:
+    image: mailhog/mailhog
+    container_name: carden-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP port
+      - "8025:8025" # Web UI port
+    networks:
+      - carden-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+
+networks:
+  carden-network:
+    driver: bridge

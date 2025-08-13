@@ -1,81 +1,36 @@
 spring:
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
     name: carden-flashcards
+    
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   
+  # Default database configuration (for when no profile is active)
   datasource:
     url: jdbc:postgresql://localhost:5432/carden_dev
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
-    
-  jpa:
-    hibernate:
-      ddl-auto: validate # Use validate with Flyway
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-        use_sql_comments: true
-    database: postgresql
-    
-  flyway:
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-    validate-on-migrate: true
-    out-of-order: false
-    placeholder-replacement: true
-    placeholders:
-      tablePrefix: ""
-    
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-      timeout: 60000
-      
-  cache:
-    type: redis
-    redis:
-      time-to-live: 600000 # 10 minutes
-      
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
 
 server:
   port: 8080
   servlet:
     context-path: /api
 
-# JWT Configuration
-jwt:
-  secret: ${JWT_SECRET:mySecretKey}
-  expiration: 86400000 # 24 hours
-  refresh-expiration: 604800000 # 7 days
-
-# CORS Configuration
-cors:
-  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
-  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
-  allowed-headers: "*"
-  allow-credentials: true
+# Application specific configuration
+app:
+  jwt:
+    secret: ${JWT_SECRET:YXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGY=}
+    access-token-expiration: PT60M # 60 minutes (longer for now)
+  security:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:4200  
+      - http://localhost:5173
 
 # Management endpoints
 management:
@@ -87,19 +42,6 @@ management:
     health:
       show-details: when-authorized
 
-# Logging
-logging:
-  level:
-    com.loopy.carden: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: logs/carden.log
-
 # Springdoc OpenAPI
 springdoc:
   api-docs:
@@ -107,47 +49,4 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operationsSorter: method
-
----
-spring:
-  config:
-    activate:
-      on-profile: dev
-  datasource:
-    url: jdbc:postgresql://localhost:5432/carden_dev
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: true
-  flyway:
-    clean-disabled: false # Allow clean in development
-    baseline-on-migrate: true
-
----
-spring:
-  config:
-    activate:
-      on-profile: prod
-  datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:carden_prod}
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-  flyway:
-    clean-disabled: true # Disable clean in production
-    validate-on-migrate: true
-    baseline-on-migrate: false
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      
-logging:
-  level:
-    com.loopy.carden: INFO
-    org.springframework.security: WARN
-    org.hibernate.SQL: WARN
-  file:
-    name: /var/log/carden/carden.log
 

@@ -4,7 +4,6 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-*.log
 
 ### STS ###
 .apt_generated
@@ -36,6 +35,14 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Environment Files ###
+.env.dev
+.env.prod
+# Keep .env.example in git
+
+### Logs ###
+logs/
 
 ### Task Master ###
 .taskmaster/

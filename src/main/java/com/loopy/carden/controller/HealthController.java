@@ -1,6 +1,6 @@
 package com.loopy.carden.controller;
 
-import com.loopy.carden.dto.ApiResponse;
+import com.loopy.carden.dto.StandardResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -12,13 +12,13 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/public")
+@RequestMapping("/public")
 @Tag(name = "Health", description = "Health check endpoints")
 public class HealthController {
 
     @GetMapping("/health")
     @Operation(summary = "Health check", description = "Check if the application is running")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> health() {
+    public ResponseEntity<StandardResponse<Map<String, Object>>> health() {
         Map<String, Object> healthData = Map.of(
             "status", "UP",
             "timestamp", LocalDateTime.now(),
@@ -26,7 +26,7 @@ public class HealthController {
             "service", "Carden Flashcards API"
         );
         
-        return ResponseEntity.ok(ApiResponse.success("Application is healthy", healthData));
+        return ResponseEntity.ok(StandardResponse.success("Application is healthy", healthData));
     }
 }
 

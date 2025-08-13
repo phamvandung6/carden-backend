@@ -1,7 +1,19 @@
+// Flyway needs the database driver at build time
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath 'org.postgresql:postgresql:42.7.2'
+		classpath 'org.flywaydb:flyway-database-postgresql:10.10.0'
+	}
+}
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.4'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.flywaydb.flyway' version '10.10.0'
 }
 
 group = 'com.loopy'
@@ -60,7 +72,7 @@ dependencies {
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 	
 	// API Documentation
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8'
 	
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
@@ -80,4 +92,21 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 	enabled = false // Disable tests temporarily during development
+}
+
+// Flyway configuration - uses environment variables
+flyway {
+	url = System.getenv('FLYWAY_URL') ?: 'jdbc:postgresql://localhost:5432/carden_dev'
+	user = System.getenv('DB_USERNAME') ?: 'postgres'
+	password = System.getenv('DB_PASSWORD') ?: 'password'
+	locations = ['classpath:db/migration']
+	baselineOnMigrate = (System.getenv('FLYWAY_BASELINE_ON_MIGRATE') ?: 'true').toBoolean()
+	validateOnMigrate = (System.getenv('FLYWAY_VALIDATE_ON_MIGRATE') ?: 'true').toBoolean()
+	cleanDisabled = (System.getenv('FLYWAY_CLEAN_DISABLED') ?: 'false').toBoolean()
+}
+
+// Show deprecation warnings during compilation
+tasks.withType(JavaCompile) {
+	options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
+	options.deprecation = true
 }

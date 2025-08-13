@@ -81,7 +81,6 @@ public class ReviewSession extends BaseEntity {
         ABANDONED
     }
 
-    @Embeddable
     @Getter
     @Setter
     @NoArgsConstructor

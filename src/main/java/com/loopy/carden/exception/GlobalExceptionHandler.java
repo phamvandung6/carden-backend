@@ -1,6 +1,6 @@
 package com.loopy.carden.exception;
 
-import com.loopy.carden.dto.ApiResponse;
+import com.loopy.carden.dto.StandardResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,35 +21,33 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(
+    public ResponseEntity<StandardResponse<Void>> handleResourceNotFoundException(
             ResourceNotFoundException ex, WebRequest request) {
         log.error("Resource not found: {}", ex.getMessage());
         
-        ApiResponse<Void> response = ApiResponse.<Void>builder()
+        StandardResponse<Void> response = StandardResponse.<Void>builder()
             .success(false)
             .message(ex.getMessage())
-            .timestamp(LocalDateTime.now())
             .build();
             
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBadRequestException(
+    public ResponseEntity<StandardResponse<Void>> handleBadRequestException(
             BadRequestException ex, WebRequest request) {
         log.error("Bad request: {}", ex.getMessage());
         
-        ApiResponse<Void> response = ApiResponse.<Void>builder()
+        StandardResponse<Void> response = StandardResponse.<Void>builder()
             .success(false)
             .message(ex.getMessage())
-            .timestamp(LocalDateTime.now())
             .build();
             
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(
+    public ResponseEntity<StandardResponse<Map<String, String>>> handleValidationExceptions(
             MethodArgumentNotValidException ex) {
         log.error("Validation error: {}", ex.getMessage());
         
@@ -61,67 +58,62 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
+        StandardResponse<Map<String, String>> response = StandardResponse.<Map<String, String>>builder()
             .success(false)
             .message("Validation failed")
             .data(errors)
-            .timestamp(LocalDateTime.now())
             .build();
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleConstraintViolationException(
+    public ResponseEntity<StandardResponse<Void>> handleConstraintViolationException(
             ConstraintViolationException ex, WebRequest request) {
         log.error("Constraint violation: {}", ex.getMessage());
         
-        ApiResponse<Void> response = ApiResponse.<Void>builder()
+        StandardResponse<Void> response = StandardResponse.<Void>builder()
             .success(false)
             .message("Constraint violation: " + ex.getMessage())
-            .timestamp(LocalDateTime.now())
             .build();
             
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBadCredentialsException(
+    public ResponseEntity<StandardResponse<Void>> handleBadCredentialsException(
             BadCredentialsException ex, WebRequest request) {
         log.error("Bad credentials: {}", ex.getMessage());
         
-        ApiResponse<Void> response = ApiResponse.<Void>builder()
+        StandardResponse<Void> response = StandardResponse.<Void>builder()
             .success(false)
             .message("Invalid credentials")
-            .timestamp(LocalDateTime.now())
             .build();
             
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(
+    public ResponseEntity<StandardResponse<Void>> handleAccessDeniedException(
             AccessDeniedException ex, WebRequest request) {
         log.error("Access denied: {}", ex.getMessage());
         
-        ApiResponse<Void> response = ApiResponse.<Void>builder()
+        StandardResponse<Void> response = StandardResponse.<Void>builder()
             .success(false)
             .message("Access denied")
-            .timestamp(LocalDateTime.now())
             .build();
             
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGlobalException(
+    public ResponseEntity<StandardResponse<Void>> handleGlobalException(
             Exception ex, WebRequest request) {
         log.error("Unexpected error: ", ex);
         
-        ApiResponse<Void> response = ApiResponse.<Void>builder()
+        StandardResponse<Void> response = StandardResponse.<Void>builder()
             .success(false)
             .message("An unexpected error occurred")
-            .timestamp(LocalDateTime.now())
             .build();
             
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);

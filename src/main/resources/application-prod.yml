@@ -1,0 +1,82 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:carden_prod}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      minimum-idle: 10
+      maximum-pool-size: 50
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+      
+  jpa:
+    hibernate:
+      ddl-auto: validate # Never change this in production
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+        
+  flyway:
+    clean-disabled: true # Disable clean in production
+    baseline-on-migrate: false
+    validate-on-migrate: true
+    locations: classpath:db/migration
+    
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+      timeout: 10000
+      jedis:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          
+  cache:
+    type: redis
+    redis:
+      time-to-live: 1800000 # 30 minutes
+      
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# Load production environment variables from .env.prod file
+spring.config.import: optional:file:.env.prod[.properties]
+
+# Production logging
+logging:
+  level:
+    com.loopy.carden: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.flywaydb: INFO
+    root: WARN
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/carden/carden.log
+    
+# Production JWT settings (shorter expiration for security)
+app:
+  jwt:
+    access-token-expiration: PT15M # 15 minutes for production

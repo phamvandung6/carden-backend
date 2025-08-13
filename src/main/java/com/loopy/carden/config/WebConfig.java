@@ -1,32 +1,33 @@
 package com.loopy.carden.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.List;
+
 @Configuration
+@ConfigurationProperties(prefix = "app.security")
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${cors.allowed-origins}")
-    private String[] allowedOrigins;
+    private List<String> allowedOrigins;
 
-    @Value("${cors.allowed-methods}")
-    private String allowedMethods;
+    public List<String> getAllowedOrigins() {
+        return allowedOrigins;
+    }
 
-    @Value("${cors.allowed-headers}")
-    private String allowedHeaders;
-
-    @Value("${cors.allow-credentials}")
-    private boolean allowCredentials;
+    public void setAllowedOrigins(List<String> allowedOrigins) {
+        this.allowedOrigins = allowedOrigins;
+    }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-            .allowedOrigins(allowedOrigins)
-            .allowedMethods(allowedMethods.split(","))
-            .allowedHeaders(allowedHeaders)
-            .allowCredentials(allowCredentials);
+            .allowedOrigins(allowedOrigins.toArray(new String[0]))
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+            .allowedHeaders("*")
+            .allowCredentials(true);
     }
 }
 
