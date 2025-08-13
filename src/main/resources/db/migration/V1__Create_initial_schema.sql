@@ -24,6 +24,7 @@ CREATE TABLE users (
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     display_name VARCHAR(100),
+    profile_image_url VARCHAR(500),
     role VARCHAR(20) NOT NULL DEFAULT 'USER',
     is_active BOOLEAN DEFAULT TRUE,
     email_verified BOOLEAN DEFAULT FALSE,
@@ -37,7 +38,7 @@ CREATE TABLE users (
     speech_volume DOUBLE PRECISION DEFAULT 1.0,
     
     -- User Preferences
-    timezone VARCHAR(10) DEFAULT 'UTC',
+    timezone VARCHAR(32) DEFAULT 'UTC',
     ui_language VARCHAR(10) DEFAULT 'en',
     learning_goal_cards_per_day INTEGER DEFAULT 20,
     

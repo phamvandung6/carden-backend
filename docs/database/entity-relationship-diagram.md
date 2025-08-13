@@ -10,6 +10,7 @@ erDiagram
         varchar email UK
         varchar password
         varchar display_name
+         varchar profile_image_url
         varchar role
         boolean is_active
         boolean email_verified

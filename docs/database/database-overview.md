@@ -19,6 +19,8 @@ Hệ thống sử dụng **PostgreSQL** làm cơ sở dữ liệu chính với c
 - Quản lý thông tin tài khoản và xác thực
 - Cài đặt TTS (Text-to-Speech) cá nhân  
 - Preferences học tập và giao diện
+- Timezone support với IANA timezone identifiers (VARCHAR(32))
+- Ảnh đại diện lưu trên Cloudflare R2 (`profile_image_url`)
 - Hỗ trợ vai trò USER và ADMIN
 
 ### 2. **Topic** - Chủ đề học tập

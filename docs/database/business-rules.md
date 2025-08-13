@@ -26,7 +26,8 @@
 - **TTS Settings**: Individual voice preferences, speed, pitch, volume
 - **Learning Goals**: Default 20 cards/day, có thể customize
 - **UI Language**: Support EN/VI, ảnh hưởng đến full-text search
-- **Timezone**: Quan trọng cho due date calculations
+- **Timezone**: Quan trọng cho due date calculations; hỗ trợ timezone names như "Asia/Ho_Chi_Minh" (VARCHAR(32))
+- **Profile Image**: Ảnh đại diện lưu trên Cloudflare R2; chỉ chấp nhận PNG/JPEG/GIF, max 5MB; sử dụng presigned URL cho upload từ frontend
 
 ---
 
@@ -103,7 +104,9 @@ REVIEW:
 ```
 due_date = last_review_date + (interval_days * 24 hours)
 ```
-- **Timezone**: Use user's timezone for due date display
+- **Timezone**: Use user's timezone for due date display (e.g., "Asia/Ho_Chi_Minh", "America/New_York")
+- **Storage**: Timezone names stored as VARCHAR(32) to accommodate full IANA timezone identifiers
+- **Calculation**: Due dates computed in user's local timezone for accurate "today"/"tomorrow" logic
 - **Batch Learning**: Cards due in same hour grouped together
 
 ---

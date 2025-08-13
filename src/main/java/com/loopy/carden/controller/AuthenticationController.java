@@ -110,28 +110,7 @@ public class AuthenticationController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get current authenticated user profile
-     * @param authentication the authentication object
-     * @return current user profile information
-     */
-    @GetMapping("/me")
-    @Operation(
-        summary = "Get current user profile",
-        description = "Retrieve the profile information of the currently authenticated user"
-    )
-    @SecurityRequirement(name = "bearerAuth")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "User profile retrieved successfully"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
-    })
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<AuthenticationResponse.UserInfo> getCurrentUser(Authentication authentication) {
-        
-        log.debug("Current user profile request received");
-        AuthenticationResponse.UserInfo userInfo = authenticationService.getCurrentUserProfile(authentication);
-        return ResponseEntity.ok(userInfo);
-    }
+
 
     /**
      * Health check endpoint for authentication service

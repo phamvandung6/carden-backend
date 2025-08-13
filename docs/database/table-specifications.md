@@ -15,6 +15,7 @@ Lưu trữ thông tin tài khoản người dùng, cài đặt cá nhân và pre
 | `email`                       | VARCHAR(100)     | NOT NULL, UNIQUE | -                 | Email đăng ký tài khoản                   |
 | `password`                    | VARCHAR(255)     | NOT NULL         | -                 | Mật khẩu đã hash (BCrypt)                 |
 | `display_name`                | VARCHAR(100)     | NULLABLE         | -                 | Tên hiển thị công khai                    |
+| `profile_image_url`           | VARCHAR(500)     | NULLABLE         | -                 | URL ảnh đại diện (lưu trên Cloudflare R2) |
 | `role`                        | VARCHAR(20)      | NOT NULL         | 'USER'            | Vai trò: USER, ADMIN                      |
 | `is_active`                   | BOOLEAN          | -                | TRUE              | Trạng thái kích hoạt tài khoản            |
 | `email_verified`              | BOOLEAN          | -                | FALSE             | Xác thực email                            |
@@ -26,7 +27,7 @@ Lưu trữ thông tin tài khoản người dùng, cài đặt cá nhân và pre
 | `speech_pitch`                | DOUBLE PRECISION | -                | 1.0               | Cao độ giọng (0.5-2.0)                    |
 | `speech_volume`               | DOUBLE PRECISION | -                | 1.0               | Âm lượng (0.0-1.0)                        |
 | **User Preferences**          |
-| `timezone`                    | VARCHAR(10)      | -                | 'UTC'             | Múi giờ người dùng                        |
+| `timezone`                    | VARCHAR(32)      | -                | 'UTC'             | Múi giờ người dùng                        |
 | `ui_language`                 | VARCHAR(10)      | -                | 'en'              | Ngôn ngữ giao diện                        |
 | `learning_goal_cards_per_day` | INTEGER          | -                | 20                | Mục tiêu thẻ học/ngày                     |
 | **Audit Fields**              |

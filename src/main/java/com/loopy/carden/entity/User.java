@@ -47,6 +47,10 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "display_name")
     private String displayName;
 
+    @Size(max = 500)
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -84,7 +88,7 @@ public class User extends BaseEntity implements UserDetails {
     private Double speechVolume = 1.0;
 
     // User Preferences
-    @Size(max = 10)
+    @Size(max = 32)
     @Column(name = "timezone")
     @Builder.Default
     private String timezone = "UTC";
