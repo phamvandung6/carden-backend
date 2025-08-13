@@ -57,6 +57,7 @@ erDiagram
         bigint download_count
         bigint like_count
         integer card_count
+        boolean deleted
         timestamp deleted_at
         timestamp created_at
         timestamp updated_at
@@ -78,6 +79,7 @@ erDiagram
         varchar unique_key
         varchar difficulty
         integer display_order
+        boolean deleted
         timestamp deleted_at
         timestamp created_at
         timestamp updated_at

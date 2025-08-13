@@ -68,6 +68,7 @@ CREATE TABLE decks (
     download_count BIGINT DEFAULT 0,
     like_count BIGINT DEFAULT 0,
     card_count INTEGER DEFAULT 0,
+    deleted BOOLEAN DEFAULT FALSE,
     deleted_at TIMESTAMP,
     
     -- Audit fields
@@ -97,6 +98,7 @@ CREATE TABLE cards (
     unique_key VARCHAR(1000) NOT NULL,
     difficulty VARCHAR(10) NOT NULL DEFAULT 'NORMAL',
     display_order INTEGER DEFAULT 0,
+    deleted BOOLEAN DEFAULT FALSE,
     deleted_at TIMESTAMP,
     
     -- Audit fields
@@ -241,6 +243,7 @@ CREATE INDEX idx_decks_topic_id ON decks(topic_id);
 CREATE INDEX idx_decks_visibility ON decks(visibility);
 CREATE INDEX idx_decks_public ON decks(is_public);
 CREATE INDEX idx_decks_system ON decks(is_system_deck);
+CREATE INDEX idx_decks_deleted ON decks(deleted);
 CREATE INDEX idx_decks_deleted_at ON decks(deleted_at);
 CREATE INDEX idx_decks_user_visibility ON decks(user_id, visibility);
 CREATE INDEX idx_decks_public_visibility ON decks(is_public, visibility) WHERE is_public = true;
@@ -251,6 +254,7 @@ CREATE INDEX idx_decks_tags_gin ON decks USING GIN(tags);
 -- Cards table indexes
 CREATE INDEX idx_cards_deck_id ON cards(deck_id);
 CREATE INDEX idx_cards_unique_key ON cards(unique_key);
+CREATE INDEX idx_cards_deleted ON cards(deleted);
 CREATE INDEX idx_cards_deleted_at ON cards(deleted_at);
 CREATE INDEX idx_cards_difficulty ON cards(difficulty);
 CREATE INDEX idx_cards_deck_order ON cards(deck_id, display_order);

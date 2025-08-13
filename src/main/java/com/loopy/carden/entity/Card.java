@@ -9,6 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
@@ -24,6 +26,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@SQLRestriction("deleted = false")
 public class Card extends BaseEntity {
 
     @NotNull
@@ -79,8 +82,11 @@ public class Card extends BaseEntity {
     @Column(name = "display_order")
     private Integer displayOrder = 0;
 
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
+
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt; // For soft delete
+    private LocalDateTime deletedAt; // Audit timestamp
 
     // Relationships
     @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

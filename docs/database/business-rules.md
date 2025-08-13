@@ -41,7 +41,7 @@
 
 ### 2.2 Deck Operations
 - **Creation**: User chỉ có thể tạo deck với `user_id = current_user.id`
-- **Soft Delete**: `deleted_at IS NOT NULL`, deck vẫn tồn tại nhưng hidden
+- **Soft Delete**: `deleted = true` (Hibernate @SoftDelete), đồng thời set `deleted_at` để audit; deck vẫn tồn tại nhưng hidden
 - **Card Count**: Auto-update khi add/remove cards
 - **Topic Assignment**: Optional, có thể null
 

@@ -98,6 +98,7 @@ Nhóm các thẻ học theo chủ đề, với các tính năng sharing và th�
 | `download_count`  | BIGINT        | -            | 0                 | Số lượt tải về                      |
 | `like_count`      | BIGINT        | -            | 0                 | Số lượt thích                       |
 | `card_count`      | INTEGER       | -            | 0                 | Số thẻ trong bộ (denormalized)      |
+| `deleted`         | BOOLEAN       | -            | FALSE             | Cờ soft delete                      |
 | `deleted_at`      | TIMESTAMP     | NULLABLE     | -                 | Soft delete timestamp               |
 | `created_at`      | TIMESTAMP     | NOT NULL     | CURRENT_TIMESTAMP | Thời gian tạo                       |
 | `updated_at`      | TIMESTAMP     | NOT NULL     | CURRENT_TIMESTAMP | Thời gian cập nhật                  |
@@ -110,6 +111,7 @@ Nhóm các thẻ học theo chủ đề, với các tính năng sharing và th�
 - `idx_decks_visibility` ON (visibility)
 - `idx_decks_public` ON (is_public)
 - `idx_decks_system` ON (is_system_deck)
+- `idx_decks_deleted` ON (deleted)
 - `idx_decks_deleted_at` ON (deleted_at)
 - `idx_decks_user_visibility` ON (user_id, visibility)
 - `idx_decks_public_visibility` ON (is_public, visibility) WHERE is_public = true
@@ -142,6 +144,7 @@ Lưu trữ nội dung thẻ học với hỗ trợ multimedia và metadata phong
 | `unique_key`        | VARCHAR(1000) | NOT NULL     | -                 | Key để detect duplicate           |
 | `difficulty`        | VARCHAR(10)   | NOT NULL     | 'NORMAL'          | EASY, NORMAL, HARD                |
 | `display_order`     | INTEGER       | -            | 0                 | Thứ tự trong deck                 |
+| `deleted`           | BOOLEAN       | -            | FALSE             | Cờ soft delete                    |
 | `deleted_at`        | TIMESTAMP     | NULLABLE     | -                 | Soft delete timestamp             |
 | `created_at`        | TIMESTAMP     | NOT NULL     | CURRENT_TIMESTAMP | Thời gian tạo                     |
 | `updated_at`        | TIMESTAMP     | NOT NULL     | CURRENT_TIMESTAMP | Thời gian cập nhật                |
@@ -151,6 +154,7 @@ Lưu trữ nội dung thẻ học với hỗ trợ multimedia và metadata phong
 
 - `idx_cards_deck_id` ON (deck_id)
 - `idx_cards_unique_key` ON (unique_key)
+- `idx_cards_deleted` ON (deleted)
 - `idx_cards_deleted_at` ON (deleted_at)
 - `idx_cards_difficulty` ON (difficulty)
 - `idx_cards_deck_order` ON (deck_id, display_order)
