@@ -1,16 +1,18 @@
 package com.loopy.carden.dto.deck;
 
 import com.loopy.carden.entity.Deck;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class DeckResponseDto {
     private Long id;
     private String title;

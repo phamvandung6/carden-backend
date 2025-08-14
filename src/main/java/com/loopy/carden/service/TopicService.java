@@ -1,7 +1,9 @@
 package com.loopy.carden.service;
 
+import com.loopy.carden.dto.topic.TopicResponseDto;
 import com.loopy.carden.entity.Topic;
 import com.loopy.carden.exception.ResourceNotFoundException;
+import com.loopy.carden.mapper.TopicMapper;
 import com.loopy.carden.repository.TopicRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,8 +24,8 @@ public class TopicService {
                 .orElseThrow(() -> new ResourceNotFoundException("Topic not found: " + id));
     }
 
-    public List<Topic> findAll() {
-        return topicRepository.findAll();
+    public List<TopicResponseDto> findAll() {
+        return TopicMapper.toResponseDtoList(topicRepository.findAll());
     }
 }
 

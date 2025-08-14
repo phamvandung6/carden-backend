@@ -1,6 +1,7 @@
 package com.loopy.carden.entity;
 
 import io.hypersistence.utils.hibernate.type.json.JsonType;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,7 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
+
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.Type;
 
@@ -32,6 +33,7 @@ public class Card extends BaseEntity {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deck_id", nullable = false)
+    @JsonBackReference
     private Deck deck;
 
     @NotBlank

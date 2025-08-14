@@ -8,7 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO representing the editable parts of a user's profile
+ * DTO for user profile updates.
+ * All fields are optional to support partial updates.
  */
 @Data
 @Builder
@@ -16,30 +17,23 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserProfileDto {
 
-	@NotBlank
-	@Size(max = 100)
-	private String displayName;
+    @Size(max = 100, message = "Display name must not exceed 100 characters")
+    private String displayName;
 
-	@NotBlank
-	@Email
-	@Size(max = 100)
-	private String email;
+    @Email(message = "Email must be valid")
+    @Size(max = 100, message = "Email must not exceed 100 characters")
+    private String email;
 
-	@NotNull
-	private UiLanguage uiLanguage;
+    private UiLanguage uiLanguage;
 
-	@NotBlank
-	@ValidTimezone
-	@Size(max = 32)
-	private String timezone;
+    @ValidTimezone
+    @Size(max = 32, message = "Timezone must not exceed 32 characters")
+    private String timezone;
 
-	@NotNull
-	@Min(1)
-	@Max(500)
-	private Integer learningGoalCardsPerDay;
+    @Min(value = 1, message = "Learning goal must be at least 1 card per day")
+    @Max(value = 500, message = "Learning goal must not exceed 500 cards per day")
+    private Integer learningGoalCardsPerDay;
 
-	@Size(max = 500)
-	private String profileImageUrl;
+    @Size(max = 500, message = "Profile image URL must not exceed 500 characters")
+    private String profileImageUrl;
 }
-
-

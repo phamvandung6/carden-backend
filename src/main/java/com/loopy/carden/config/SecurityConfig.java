@@ -94,6 +94,7 @@ public class SecurityConfig {
 
                     // Public API endpoints  
                     .requestMatchers("/public/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/v1/topics").permitAll()
                     .requestMatchers(HttpMethod.GET, "/v1/decks").permitAll()
                     .requestMatchers(HttpMethod.GET, "/v1/decks/{id}").permitAll()
 

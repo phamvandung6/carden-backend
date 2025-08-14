@@ -28,58 +28,68 @@ public class DeckController {
     private final DeckService deckService;
 
     @GetMapping
-    @Operation(summary = "Search public decks")
-    public ResponseEntity<Page<DeckResponseDto>> searchPublic(@RequestParam(required = false) String q,
+    @Operation(
+        summary = "Search public decks",
+        description = "Search and filter public decks with pagination. " +
+                     "Valid sort fields: title, description, createdAt, updatedAt, visibility, cefrLevel. " +
+                     "Example: ?sort=title,asc&sort=createdAt,desc"
+    )
+    public ResponseEntity<StandardResponse<Page<DeckResponseDto>>> searchPublic(@RequestParam(required = false) String q,
                                                               @RequestParam(required = false) Long topicId,
                                                               @RequestParam(required = false) Deck.CEFRLevel cefr,
                                                               Pageable pageable) {
         var result = deckService.search(null, q, topicId, cefr, true, pageable);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(StandardResponse.success(result));
     }
 
     @GetMapping("/me")
-    @Operation(summary = "Search my decks")
+    @Operation(
+        summary = "Search my decks",
+        description = "Search and filter user's own decks with pagination. " +
+                     "Valid sort fields: title, description, createdAt, updatedAt, visibility, cefrLevel. " +
+                     "Example: ?sort=title,asc&sort=createdAt,desc"
+    )
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<Page<DeckResponseDto>> searchMine(Authentication authentication,
+    public ResponseEntity<StandardResponse<Page<DeckResponseDto>>> searchMine(Authentication authentication,
                                                             @RequestParam(required = false) String q,
                                                             @RequestParam(required = false) Long topicId,
                                                             @RequestParam(required = false) Deck.CEFRLevel cefr,
                                                             Pageable pageable) {
         User user = (User) authentication.getPrincipal();
         var result = deckService.searchOwned(user, q, topicId, cefr, pageable);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(StandardResponse.success(result));
     }
 
     @PostMapping
     @Operation(summary = "Create a deck")
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<DeckResponseDto> create(Authentication authentication,
+    public ResponseEntity<StandardResponse<DeckResponseDto>> create(Authentication authentication,
                                                   @Valid @RequestBody DeckCreateDto request) {
         User user = (User) authentication.getPrincipal();
         var created = deckService.createDeck(user, request);
-        return ResponseEntity.ok(created);
+        return ResponseEntity.ok(StandardResponse.success("Deck created", created));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get deck by id")
-    public ResponseEntity<DeckResponseDto> get(Authentication authentication, @PathVariable Long id) {
+    public ResponseEntity<StandardResponse<DeckResponseDto>> get(Authentication authentication, @PathVariable Long id) {
         User user = authentication != null ? (User) authentication.getPrincipal() : null;
         var dto = deckService.getDeck(user, id);
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(StandardResponse.success(dto));
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     @Operation(summary = "Update a deck")
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<DeckResponseDto> update(Authentication authentication,
+    public ResponseEntity<StandardResponse<DeckResponseDto>> update(Authentication authentication,
                                                   @PathVariable Long id,
                                                   @Valid @RequestBody DeckUpdateDto request) {
         User user = (User) authentication.getPrincipal();
         var updated = deckService.updateDeck(user, id, request);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(StandardResponse.success("Deck updated", updated));
     }
 
     @DeleteMapping("/{id}")

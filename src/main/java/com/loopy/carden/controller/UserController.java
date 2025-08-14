@@ -36,12 +36,12 @@ public class UserController {
 		@ApiResponse(responseCode = "401", description = "Unauthorized")
 	})
 	@PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-	public ResponseEntity<UserProfileDto> getMe(Authentication authentication) {
+	public ResponseEntity<StandardResponse<UserProfileDto>> getMe(Authentication authentication) {
 		User user = (User) authentication.getPrincipal();
-		return ResponseEntity.ok(userService.getProfile(user.getId()));
+		return ResponseEntity.ok(StandardResponse.success(userService.getProfile(user.getId())));
 	}
 
-	@PutMapping("/me")
+	@PatchMapping("/me")
 	@Operation(summary = "Update current user profile")
 	@SecurityRequirement(name = "bearerAuth")
 	@ApiResponses({
@@ -50,13 +50,13 @@ public class UserController {
 		@ApiResponse(responseCode = "401", description = "Unauthorized")
 	})
 	@PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-	public ResponseEntity<UserProfileDto> updateMe(Authentication authentication,
+	public ResponseEntity<StandardResponse<UserProfileDto>> updateMe(Authentication authentication,
 	                                             @Valid @RequestBody UserProfileDto request) {
 		User user = (User) authentication.getPrincipal();
-		return ResponseEntity.ok(userService.updateProfile(user.getId(), request));
+		return ResponseEntity.ok(StandardResponse.success(userService.updateProfile(user.getId(), request)));
 	}
 
-	@PutMapping("/me/tts-settings")
+	@PatchMapping("/me/tts-settings")
 	@Operation(summary = "Update TTS settings")
 	@SecurityRequirement(name = "bearerAuth")
 	@ApiResponses({
@@ -65,10 +65,23 @@ public class UserController {
 		@ApiResponse(responseCode = "401", description = "Unauthorized")
 	})
 	@PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-	public ResponseEntity<TtsSettingsDto> updateTts(Authentication authentication,
+	public ResponseEntity<StandardResponse<TtsSettingsDto>> updateTts(Authentication authentication,
 	                                               @Valid @RequestBody TtsSettingsDto request) {
 		User user = (User) authentication.getPrincipal();
-		return ResponseEntity.ok(userService.updateTtsSettings(user.getId(), request));
+		return ResponseEntity.ok(StandardResponse.success(userService.updateTtsSettings(user.getId(), request)));
+	}
+
+	@GetMapping("/me/tts-settings")
+	@Operation(summary = "Get current user TTS settings")
+	@SecurityRequirement(name = "bearerAuth")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "TTS settings retrieved"),
+		@ApiResponse(responseCode = "401", description = "Unauthorized")
+	})
+	@PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+	public ResponseEntity<StandardResponse<TtsSettingsDto>> getTtsSettings(Authentication authentication) {
+		User user = (User) authentication.getPrincipal();
+		return ResponseEntity.ok(StandardResponse.success(userService.getTtsSettings(user.getId())));
 	}
 
     @PostMapping("/me/avatar")

@@ -12,6 +12,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -104,6 +107,58 @@ public class GlobalExceptionHandler {
             .build();
             
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<StandardResponse<Void>> handleNoResourceFoundException(
+            NoResourceFoundException ex, WebRequest request) {
+        // Log concisely without full stack trace for common 404s
+        log.warn("Resource not found: {}", ex.getResourcePath());
+        
+        StandardResponse<Void> response = StandardResponse.<Void>builder()
+            .success(false)
+            .message("Resource not found")
+            .build();
+            
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+    public ResponseEntity<StandardResponse<Void>> handleInvalidDataAccessApiUsageException(
+            InvalidDataAccessApiUsageException ex, WebRequest request) {
+        // Log warning for invalid sort/pagination parameters
+        log.warn("Invalid data access usage: {}", ex.getMessage());
+        
+        String message = "Invalid sort parameter. Use valid field names like: title, createdAt, updatedAt";
+        if (ex.getMessage().contains("Sort expression")) {
+            message = "Invalid sort field. Valid fields: title, description, createdAt, updatedAt, visibility, cefrLevel";
+        }
+        
+        StandardResponse<Void> response = StandardResponse.<Void>builder()
+            .success(false)
+            .message(message)
+            .build();
+            
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InvalidDataAccessResourceUsageException.class)
+    public ResponseEntity<StandardResponse<Void>> handleInvalidDataAccessResourceUsageException(
+            InvalidDataAccessResourceUsageException ex, WebRequest request) {
+        // Log warning for SQL errors (like invalid column names)
+        log.warn("Invalid data access resource usage: {}", ex.getMessage());
+        
+        String message = "Invalid query parameter";
+        if (ex.getMessage().contains("column") && ex.getMessage().contains("does not exist")) {
+            message = "Invalid sort field. Valid fields for decks: title, description, createdAt, updatedAt, visibility, cefrLevel";
+        }
+        
+        StandardResponse<Void> response = StandardResponse.<Void>builder()
+            .success(false)
+            .message(message)
+            .build();
+            
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)

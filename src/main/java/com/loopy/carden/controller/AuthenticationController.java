@@ -50,12 +50,12 @@ public class AuthenticationController {
         @ApiResponse(responseCode = "400", description = "Invalid input or user already exists"),
         @ApiResponse(responseCode = "422", description = "Validation error")
     })
-    public ResponseEntity<AuthenticationResponse> register(
+    public ResponseEntity<StandardResponse<AuthenticationResponse>> register(
             @Valid @RequestBody RegisterRequest request) {
         
         log.info("Registration request received for email: {}", request.getEmail());
         AuthenticationResponse response = authenticationService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(StandardResponse.success("Registration successful", response));
     }
 
     /**
@@ -73,12 +73,12 @@ public class AuthenticationController {
         @ApiResponse(responseCode = "400", description = "Invalid credentials"),
         @ApiResponse(responseCode = "422", description = "Validation error")
     })
-    public ResponseEntity<AuthenticationResponse> authenticate(
+    public ResponseEntity<StandardResponse<AuthenticationResponse>> authenticate(
             @Valid @RequestBody LoginRequest request) {
         
         log.info("Authentication request received for: {}", request.getUsernameOrEmail());
         AuthenticationResponse response = authenticationService.authenticate(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(StandardResponse.success("Login successful", response));
     }
 
     /**
@@ -105,29 +105,6 @@ public class AuthenticationController {
         StandardResponse<Void> response = StandardResponse.<Void>builder()
                 .success(true)
                 .message("Successfully logged out")
-                .build();
-        
-        return ResponseEntity.ok(response);
-    }
-
-
-
-    /**
-     * Health check endpoint for authentication service
-     * @return health status
-     */
-    @GetMapping("/health")
-    @Operation(
-        summary = "Authentication service health check",
-        description = "Check if the authentication service is running"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Service is healthy")
-    })
-    public ResponseEntity<StandardResponse<Void>> health() {
-        StandardResponse<Void> response = StandardResponse.<Void>builder()
-                .success(true)
-                .message("Authentication service is healthy")
                 .build();
         
         return ResponseEntity.ok(response);

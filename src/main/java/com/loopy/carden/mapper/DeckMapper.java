@@ -37,26 +37,26 @@ public final class DeckMapper {
     }
 
     public static DeckResponseDto toResponseDto(Deck deck) {
-        DeckResponseDto dto = new DeckResponseDto();
-        dto.setId(deck.getId());
-        dto.setTitle(deck.getTitle());
-        dto.setDescription(deck.getDescription());
-        dto.setUserId(deck.getUser() != null ? deck.getUser().getId() : null);
-        dto.setTopicId(deck.getTopic() != null ? deck.getTopic().getId() : null);
-        dto.setVisibility(deck.getVisibility());
-        dto.setCefrLevel(deck.getCefrLevel());
-        dto.setSourceLanguage(deck.getSourceLanguage());
-        dto.setTargetLanguage(deck.getTargetLanguage());
-        dto.setCoverImageUrl(deck.getCoverImageUrl());
-        dto.setTags(deck.getTags());
-        dto.setPublicDeck(deck.isPublic());
-        dto.setSystemDeck(deck.isSystemDeck());
-        dto.setDownloadCount(deck.getDownloadCount());
-        dto.setLikeCount(deck.getLikeCount());
-        dto.setCardCount(deck.getCardCount());
-        dto.setCreatedAt(deck.getCreatedAt());
-        dto.setUpdatedAt(deck.getUpdatedAt());
-        return dto;
+        return DeckResponseDto.builder()
+                .id(deck.getId())
+                .title(deck.getTitle())
+                .description(deck.getDescription())
+                .userId(deck.getUser() != null ? deck.getUser().getId() : null)
+                .topicId(deck.getTopic() != null ? deck.getTopic().getId() : null)
+                .visibility(deck.getVisibility())
+                .cefrLevel(deck.getCefrLevel())
+                .sourceLanguage(deck.getSourceLanguage())
+                .targetLanguage(deck.getTargetLanguage())
+                .coverImageUrl(deck.getCoverImageUrl())
+                .tags(deck.getTags())
+                .publicDeck(deck.isPublic())
+                .systemDeck(deck.isSystemDeck())
+                .downloadCount(deck.getDownloadCount())
+                .likeCount(deck.getLikeCount())
+                .cardCount(deck.getCardCount())
+                .createdAt(deck.getCreatedAt())
+                .updatedAt(deck.getUpdatedAt())
+                .build();
     }
 }
 
