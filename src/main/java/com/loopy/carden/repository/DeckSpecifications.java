@@ -38,7 +38,7 @@ public final class DeckSpecifications {
     }
 
     public static Specification<Deck> isPublic(boolean publicOnly) {
-        return (root, query, cb) -> publicOnly ? cb.isTrue(root.get("isPublic")) : cb.conjunction();
+        return (root, query, cb) -> publicOnly ? cb.equal(root.get("visibility"), Deck.Visibility.PUBLIC) : cb.conjunction();
     }
 }
 

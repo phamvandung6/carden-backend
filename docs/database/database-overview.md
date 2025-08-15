@@ -31,7 +31,7 @@ Hệ thống sử dụng **PostgreSQL** làm cơ sở dữ liệu chính với c
 ### 3. **Deck** - Bộ thẻ học
 - Nhóm các thẻ học theo chủ đề
 - Hỗ trợ CEFR levels (A1-C2)
-- Chế độ public/private/unlisted
+- Chế độ visibility: PRIVATE, PUBLIC, UNLISTED
 - Thống kê downloads và likes
 - Soft delete với khôi phục
 
@@ -47,6 +47,11 @@ Hệ thống sử dụng **PostgreSQL** làm cơ sở dữ liệu chính với c
 - Triển khai thuật toán SRS (ease factor, intervals)
 - Trạng thái: NEW, LEARNING, REVIEW, RELEARNING
 - Thống kê accuracy và performance
+- **Enhanced SRS Features**:
+  - Learning steps với `current_learning_step`
+  - Leech detection với `consecutive_failures` và `is_leech`
+  - Graduation tracking với `graduated_at`
+  - Advanced algorithm support
 
 ### 6. **ReviewSession** - Phiên học tập
 - Ghi lại mỗi session học của user
@@ -124,4 +129,4 @@ Sử dụng **Flyway** cho quản lý database migrations:
 
 ---
 
-*Tài liệu này được cập nhật tương ứng với migration V1 - Schema ban đầu với đầy đủ indexes*
+*Tài liệu này được cập nhật tương ứng với migration V1 - Schema ban đầu với enhanced SRS fields, ease factor constraint 1.3-3.0, và đầy đủ indexes*

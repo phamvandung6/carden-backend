@@ -11,7 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
+
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.Type;
 
@@ -72,8 +72,7 @@ public class Deck extends BaseEntity {
     @Column(name = "is_system_deck")
     private boolean isSystemDeck = false;
 
-    @Column(name = "is_public")
-    private boolean isPublic = false;
+
 
     @Column(name = "download_count")
     private Long downloadCount = 0L;

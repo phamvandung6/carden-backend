@@ -7,6 +7,8 @@ import com.loopy.carden.entity.User;
 import com.loopy.carden.service.storage.CloudflareR2Service;
 import com.loopy.carden.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -84,7 +86,7 @@ public class UserController {
 		return ResponseEntity.ok(StandardResponse.success(userService.getTtsSettings(user.getId())));
 	}
 
-    @PostMapping("/me/avatar")
+    @PostMapping(value = "/me/avatar", consumes = "multipart/form-data")
     @Operation(summary = "Upload profile picture (server-side)")
 	@SecurityRequirement(name = "bearerAuth")
 	@ApiResponses({
@@ -94,6 +96,8 @@ public class UserController {
 	})
 	@PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
 	public ResponseEntity<StandardResponse<String>> uploadAvatar(Authentication authentication,
+																 @Parameter(description = "Avatar image file", 
+																 content = @Content(mediaType = "multipart/form-data"))
 																 @RequestParam("file") MultipartFile file) {
 		User user = (User) authentication.getPrincipal();
 		String url = userService.uploadAvatar(user.getId(), file);
@@ -109,6 +113,7 @@ public class UserController {
     })
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<StandardResponse<CloudflareR2Service.PresignedUpload>> presignAvatar(Authentication authentication,
+                                                                        @Parameter(description = "Content type of the file (e.g., image/jpeg, image/png)")
                                                                         @RequestParam("contentType") String contentType) {
         User user = (User) authentication.getPrincipal();
         var presigned = r2Service.createAvatarPresignedUpload(user.getId(), contentType);
@@ -124,6 +129,7 @@ public class UserController {
     })
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<StandardResponse<String>> confirmAvatar(Authentication authentication,
+                                                                 @Parameter(description = "Public URL of the uploaded avatar")
                                                                  @RequestParam("publicUrl") String publicUrl) {
         User user = (User) authentication.getPrincipal();
         String url = userService.confirmAvatarUpload(user.getId(), publicUrl);

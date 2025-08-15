@@ -20,15 +20,25 @@ public interface DeckRepository extends JpaRepository<Deck, Long>, JpaSpecificat
 
 	@Query(
 		value = "SELECT * FROM decks d " +
-			"WHERE (:q IS NULL OR to_tsvector('english', coalesce(d.title,'') || ' ' || coalesce(d.description,'')) @@ plainto_tsquery('english', :q)) " +
-			"AND (:publicOnly = FALSE OR d.is_public = TRUE) " +
+			"WHERE (:q IS NULL OR (" +
+			"  to_tsvector('english', coalesce(d.title,'') || ' ' || coalesce(d.description,'')) @@ plainto_tsquery('english', :q) " +
+			"  OR LOWER(coalesce(d.title,'')) LIKE LOWER(CONCAT('%', :q, '%')) " +
+			"  OR LOWER(coalesce(d.description,'')) LIKE LOWER(CONCAT('%', :q, '%'))" +
+			")) " +
+			"AND (:publicOnly = FALSE OR d.visibility = 'PUBLIC') " +
 			"AND (:topicId IS NULL OR d.topic_id = :topicId) " +
-			"AND (:cefr IS NULL OR d.cefr_level = :cefr)",
+			"AND (:cefr IS NULL OR d.cefr_level = :cefr) " +
+			"AND d.deleted = FALSE",
 		countQuery = "SELECT count(*) FROM decks d " +
-			"WHERE (:q IS NULL OR to_tsvector('english', coalesce(d.title,'') || ' ' || coalesce(d.description,'')) @@ plainto_tsquery('english', :q)) " +
-			"AND (:publicOnly = FALSE OR d.is_public = TRUE) " +
+			"WHERE (:q IS NULL OR (" +
+			"  to_tsvector('english', coalesce(d.title,'') || ' ' || coalesce(d.description,'')) @@ plainto_tsquery('english', :q) " +
+			"  OR LOWER(coalesce(d.title,'')) LIKE LOWER(CONCAT('%', :q, '%')) " +
+			"  OR LOWER(coalesce(d.description,'')) LIKE LOWER(CONCAT('%', :q, '%'))" +
+			")) " +
+			"AND (:publicOnly = FALSE OR d.visibility = 'PUBLIC') " +
 			"AND (:topicId IS NULL OR d.topic_id = :topicId) " +
-			"AND (:cefr IS NULL OR d.cefr_level = :cefr)",
+			"AND (:cefr IS NULL OR d.cefr_level = :cefr) " +
+			"AND d.deleted = FALSE",
 		nativeQuery = true
 	)
 	Page<Deck> searchFullTextNative(

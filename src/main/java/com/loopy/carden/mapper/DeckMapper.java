@@ -22,6 +22,8 @@ public final class DeckMapper {
         deck.setTargetLanguage(dto.getTargetLanguage());
         deck.setCoverImageUrl(dto.getCoverImageUrl());
         deck.setTags(dto.getTags());
+        // Default to PRIVATE visibility
+        deck.setVisibility(Deck.Visibility.PRIVATE);
         return deck;
     }
 
@@ -29,6 +31,9 @@ public final class DeckMapper {
         if (dto.getTitle() != null) deck.setTitle(dto.getTitle());
         if (dto.getDescription() != null) deck.setDescription(dto.getDescription());
         if (topic != null) deck.setTopic(topic);
+        if (dto.getVisibility() != null) {
+            deck.setVisibility(dto.getVisibility());
+        }
         if (dto.getCefrLevel() != null) deck.setCefrLevel(dto.getCefrLevel());
         if (dto.getSourceLanguage() != null) deck.setSourceLanguage(dto.getSourceLanguage());
         if (dto.getTargetLanguage() != null) deck.setTargetLanguage(dto.getTargetLanguage());
@@ -49,7 +54,7 @@ public final class DeckMapper {
                 .targetLanguage(deck.getTargetLanguage())
                 .coverImageUrl(deck.getCoverImageUrl())
                 .tags(deck.getTags())
-                .publicDeck(deck.isPublic())
+
                 .systemDeck(deck.isSystemDeck())
                 .downloadCount(deck.getDownloadCount())
                 .likeCount(deck.getLikeCount())

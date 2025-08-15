@@ -94,7 +94,6 @@ Nhóm các thẻ học theo chủ đề, với các tính năng sharing và th�
 | `cover_image_url` | VARCHAR(500)  | NULLABLE     | -                 | URL ảnh bìa                         |
 | `tags`            | JSONB         | NULLABLE     | -                 | Tags phân loại (array of strings)   |
 | `is_system_deck`  | BOOLEAN       | -            | FALSE             | Bộ thẻ hệ thống                     |
-| `is_public`       | BOOLEAN       | -            | FALSE             | Công khai trong marketplace         |
 | `download_count`  | BIGINT        | -            | 0                 | Số lượt tải về                      |
 | `like_count`      | BIGINT        | -            | 0                 | Số lượt thích                       |
 | `card_count`      | INTEGER       | -            | 0                 | Số thẻ trong bộ (denormalized)      |
@@ -109,12 +108,11 @@ Nhóm các thẻ học theo chủ đề, với các tính năng sharing và th�
 - `idx_decks_user_id` ON (user_id)
 - `idx_decks_topic_id` ON (topic_id)
 - `idx_decks_visibility` ON (visibility)
-- `idx_decks_public` ON (is_public)
 - `idx_decks_system` ON (is_system_deck)
 - `idx_decks_deleted` ON (deleted)
 - `idx_decks_deleted_at` ON (deleted_at)
 - `idx_decks_user_visibility` ON (user_id, visibility)
-- `idx_decks_public_visibility` ON (is_public, visibility) WHERE is_public = true
+- `idx_decks_public_only` ON (visibility) WHERE visibility = 'PUBLIC'
 - `idx_decks_tags_gin` ON (tags) USING GIN
 - `idx_decks_user_status` ON (user_id, deleted_at) WHERE deleted_at IS NULL
 
@@ -183,7 +181,7 @@ Theo dõi tiến độ học của từng user cho từng thẻ, triển khai th
 | `card_id`          | BIGINT           | FK, NOT NULL | -                 | Thẻ được học                      |
 | `deck_id`          | BIGINT           | FK, NOT NULL | -                 | Bộ thẻ (denormalized)             |
 | `repetition_count` | INTEGER          | NOT NULL     | 0                 | Số lần đã ôn                      |
-| `ease_factor`      | DOUBLE PRECISION | NOT NULL     | 2.5               | Hệ số độ dễ (1.3-2.5)             |
+| `ease_factor`      | DOUBLE PRECISION | NOT NULL     | 2.5               | Hệ số độ dễ (1.3-3.0)             |
 | `interval_days`    | INTEGER          | NOT NULL     | 1                 | Khoảng cách ôn tập (ngày)         |
 | `due_date`         | TIMESTAMP        | NOT NULL     | -                 | Thời gian đến hạn ôn              |
 | `card_state`       | VARCHAR(15)      | NOT NULL     | 'NEW'             | NEW, LEARNING, REVIEW, RELEARNING |
@@ -192,6 +190,12 @@ Theo dõi tiến độ học của từng user cho từng thẻ, triển khai th
 | `total_reviews`    | INTEGER          | -            | 0                 | Tổng số lần ôn                    |
 | `correct_reviews`  | INTEGER          | -            | 0                 | Số lần ôn đúng                    |
 | `accuracy_rate`    | DOUBLE PRECISION | -            | 0.0               | Tỷ lệ chính xác (%)               |
+| **New SRS Fields** |
+| `consecutive_failures` | INTEGER      | NOT NULL     | 0                 | Số lần failed liên tiếp (leech detection) |
+| `current_learning_step` | INTEGER     | NULLABLE     | -                 | Bước hiện tại trong learning phase |
+| `is_leech`         | BOOLEAN          | NOT NULL     | FALSE             | Cờ đánh dấu thẻ khó (leech card)  |
+| `graduated_at`     | TIMESTAMP        | NULLABLE     | -                 | Thời gian tốt nghiệp từ learning phase |
+| **Audit Fields**   |
 | `created_at`       | TIMESTAMP        | NOT NULL     | CURRENT_TIMESTAMP | Thời gian tạo                     |
 | `updated_at`       | TIMESTAMP        | NOT NULL     | CURRENT_TIMESTAMP | Thời gian cập nhật                |
 | `version`          | BIGINT           | -            | 0                 | Version cho optimistic locking    |
@@ -199,7 +203,7 @@ Theo dõi tiến độ học của từng user cho từng thẻ, triển khai th
 ### Constraints
 
 - **Unique**: (user_id, card_id) - mỗi user chỉ có 1 study state per card
-- **Check**: ease_factor BETWEEN 1.3 AND 2.5
+- **Check**: ease_factor BETWEEN 1.3 AND 3.0
 
 ### Indexes
 
@@ -210,6 +214,8 @@ Theo dõi tiến độ học của từng user cho từng thẻ, triển khai th
 - `idx_study_states_card_state` ON (card_state)
 - `idx_study_states_user_state` ON (user_id, card_state)
 - `idx_study_states_due_cards` ON (user_id, due_date, card_state) WHERE due_date <= CURRENT_TIMESTAMP
+- `idx_study_states_is_leech` ON (user_id, is_leech) WHERE is_leech = TRUE
+- `idx_study_states_learning_step` ON (user_id, current_learning_step) WHERE current_learning_step IS NOT NULL
 
 ---
 

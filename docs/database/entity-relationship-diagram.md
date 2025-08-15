@@ -53,7 +53,6 @@ erDiagram
         varchar cover_image_url
         jsonb tags
         boolean is_system_deck
-        boolean is_public
         bigint download_count
         bigint like_count
         integer card_count
@@ -101,6 +100,10 @@ erDiagram
         integer total_reviews
         integer correct_reviews
         double accuracy_rate
+        integer consecutive_failures
+        integer current_learning_step
+        boolean is_leech
+        timestamp graduated_at
         timestamp created_at
         timestamp updated_at
         bigint version
@@ -203,6 +206,7 @@ erDiagram
 - **Foreign Key**: `decks.topic_id -> topics.id`
 - **Ràng buộc**: NULLABLE (deck có thể không có topic)
 - **Cascade**: Khi topic bị xóa, deck vẫn tồn tại với topic_id = NULL
+- **Visibility**: Deck có thể có visibility PRIVATE, PUBLIC, hoặc UNLISTED
 
 ### 4. Deck - Card (1:N)
 - **Mối quan hệ**: Một deck chứa nhiều card
@@ -283,7 +287,7 @@ erDiagram
 - **decks.visibility**: IN ('PRIVATE', 'PUBLIC', 'UNLISTED')
 - **decks.cefr_level**: IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')
 - **cards.difficulty**: IN ('EASY', 'NORMAL', 'HARD')
-- **study_states.ease_factor**: BETWEEN 1.3 AND 2.5
+- **study_states.ease_factor**: BETWEEN 1.3 AND 3.0
 - **study_states.card_state**: IN ('NEW', 'LEARNING', 'REVIEW', 'RELEARNING')
 - **review_sessions.study_mode**: IN ('FLIP', 'TYPE_ANSWER', 'MULTIPLE_CHOICE')
 - **review_sessions.session_status**: IN ('IN_PROGRESS', 'COMPLETED', 'ABANDONED')

@@ -44,7 +44,7 @@ public class StudyState extends BaseEntity {
     private Integer repetitionCount = 0;
 
     @DecimalMin("1.3")
-    @DecimalMax("2.5")
+    @DecimalMax("3.0")
     @Column(name = "ease_factor", nullable = false)
     private Double easeFactor = 2.5;
 
@@ -72,6 +72,18 @@ public class StudyState extends BaseEntity {
 
     @Column(name = "accuracy_rate")
     private Double accuracyRate = 0.0;
+
+    @Column(name = "consecutive_failures")
+    private Integer consecutiveFailures = 0;
+
+    @Column(name = "current_learning_step")
+    private Integer currentLearningStep = 0;
+
+    @Column(name = "is_leech")
+    private Boolean isLeech = false;
+
+    @Column(name = "graduated_at")
+    private LocalDateTime graduatedAt;
 
     public enum CardState {
         NEW,        // Card never studied

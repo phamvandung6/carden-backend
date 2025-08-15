@@ -20,6 +20,8 @@ public interface CardRepository extends JpaRepository<Card, Long>, JpaSpecificat
     List<Card> findByDeckOrderByDisplayOrder(Deck deck);
     
     long countByDeck(Deck deck);
+    
+    long countByDeckId(Long deckId);
 
     // Duplicate detection
     @Query("SELECT c FROM Card c WHERE c.deck = :deck AND c.uniqueKey = :uniqueKey")

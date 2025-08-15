@@ -135,8 +135,8 @@ CREATE INDEX idx_cards_deck_status ON cards(deck_id, deleted_at)
 WHERE deleted_at IS NULL;
 
 -- Public decks for marketplace
-CREATE INDEX idx_decks_public_visibility ON decks(is_public, visibility) 
-WHERE is_public = true;
+CREATE INDEX idx_decks_public_only ON decks(visibility) 
+WHERE visibility = 'PUBLIC';
 ```
 
 ### 6.2 Due Cards Optimization
@@ -144,6 +144,14 @@ WHERE is_public = true;
 -- Cards that are currently due
 CREATE INDEX idx_study_states_due_cards ON study_states(user_id, due_date, card_state) 
 WHERE due_date <= CURRENT_TIMESTAMP;
+
+-- Leech cards optimization
+CREATE INDEX idx_study_states_is_leech ON study_states(user_id, is_leech) 
+WHERE is_leech = TRUE;
+
+-- Learning step tracking
+CREATE INDEX idx_study_states_learning_step ON study_states(user_id, current_learning_step) 
+WHERE current_learning_step IS NOT NULL;
 ```
 
 ### 6.3 Benefits

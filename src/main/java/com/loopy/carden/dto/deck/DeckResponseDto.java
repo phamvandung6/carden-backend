@@ -25,7 +25,7 @@ public class DeckResponseDto {
     private String targetLanguage;
     private String coverImageUrl;
     private List<String> tags;
-    private boolean publicDeck;
+
     private boolean systemDeck;
     private Long downloadCount;
     private Long likeCount;

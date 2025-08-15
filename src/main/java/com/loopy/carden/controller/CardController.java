@@ -15,7 +15,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -63,9 +65,15 @@ public class CardController {
             @RequestParam(required = false) @Parameter(description = "Search query for full-text search") String search,
             @RequestParam(required = false) @Parameter(description = "Filter by difficulty") Card.Difficulty difficulty,
             @RequestParam(required = false) @Parameter(description = "Filter by tag") String tag,
-            Pageable pageable) {
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Sort criteria (e.g. displayOrder,asc or createdAt,desc)")
+            @RequestParam(required = false) String sort) {
         
         User user = authentication != null ? (User) authentication.getPrincipal() : null;
+        Pageable pageable = createPageable(page, size, sort);
         
         var cards = cardService.getCardsByDeck(user, deckId, search, difficulty, pageable);
         var cardDtos = cards.map(CardMapper::toResponseDto);
@@ -178,5 +186,21 @@ public class CardController {
                 .data(false)
                 .message("No duplicate found")
                 .build());
+    }
+
+    private Pageable createPageable(int page, int size, String sort) {
+        if (sort == null || sort.isBlank()) {
+            return PageRequest.of(page, size);
+        }
+        
+        String[] sortParts = sort.split(",");
+        String property = sortParts[0];
+        Sort.Direction direction = Sort.Direction.ASC;
+        
+        if (sortParts.length > 1) {
+            direction = sortParts[1].equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        }
+        
+        return PageRequest.of(page, size, Sort.by(direction, property));
     }
 }

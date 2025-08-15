@@ -88,7 +88,7 @@ public class DeckService {
     }
 
     private boolean canView(User requester, Deck deck) {
-        if (deck.getVisibility() == Deck.Visibility.PUBLIC || deck.isPublic()) return true;
+        if (deck.getVisibility() == Deck.Visibility.PUBLIC) return true;
         return requester != null && deck.getUser() != null && requester.getId().equals(deck.getUser().getId());
     }
 

@@ -34,13 +34,17 @@
 ## 2. Deck và Card Management
 
 ### 2.1 Deck Ownership và Visibility
-- **Private Decks**: Chỉ owner mới access được
-- **Public Decks**: Visible trong marketplace, có thể copy/download
-- **Unlisted Decks**: Access qua direct link, không show trong search
+- **Private Decks**: Chỉ owner mới access được (`visibility = 'PRIVATE'`)
+- **Public Decks**: Visible trong marketplace, có thể copy/download (`visibility = 'PUBLIC'`)
+- **Unlisted Decks**: Access qua direct link, không show trong search (`visibility = 'UNLISTED'`)
 - **System Decks**: Tạo bởi admin, không thể delete, visible cho all users
 
 ### 2.2 Deck Operations
 - **Creation**: User chỉ có thể tạo deck với `user_id = current_user.id`
+- **Visibility Management**: 
+  - `visibility = 'PRIVATE'`: Chỉ owner mới thấy
+  - `visibility = 'PUBLIC'`: Hiển thị trong marketplace, search được
+  - `visibility = 'UNLISTED'`: Access qua direct link, không search được
 - **Soft Delete**: `deleted = true` (Hibernate @SoftDelete), đồng thời set `deleted_at` để audit; deck vẫn tồn tại nhưng hidden
 - **Card Count**: Auto-update khi add/remove cards
 - **Topic Assignment**: Optional, có thể null
@@ -93,12 +97,12 @@ REVIEW:
 
 ### 3.4 Ease Factor Management
 - **Initial**: 2.5 for new cards
-- **Range**: 1.3 - 2.5 (capped)
+- **Range**: 1.3 - 3.0 (capped)
 - **Adjustment**:
   - Score 0: ease_factor -= 0.2
   - Score 1: ease_factor -= 0.15
   - Score 2: No change
-  - Score 3: ease_factor += 0.1
+  - Score 3: ease_factor += 0.15
 
 ### 3.5 Due Date Calculation
 ```
@@ -108,6 +112,25 @@ due_date = last_review_date + (interval_days * 24 hours)
 - **Storage**: Timezone names stored as VARCHAR(32) to accommodate full IANA timezone identifiers
 - **Calculation**: Due dates computed in user's local timezone for accurate "today"/"tomorrow" logic
 - **Batch Learning**: Cards due in same hour grouped together
+
+### 3.6 Enhanced SRS Features (V1.1)
+
+#### Learning Steps
+- **New Cards**: Start with learning steps (e.g., 1m, 10m) before graduating
+- **Current Step**: `current_learning_step` tracks position in learning sequence
+- **Graduation**: Cards move to REVIEW state when all learning steps completed
+- **Reset**: Failed review cards return to learning with appropriate step
+
+#### Leech Detection
+- **Consecutive Failures**: Track failed reviews in `consecutive_failures`
+- **Leech Threshold**: Cards become leeches after 8 consecutive failures
+- **Leech Flag**: `is_leech` boolean for efficient querying
+- **Leech Handling**: Suspend or modify intervals for difficult cards
+
+#### Enhanced Tracking
+- **Graduation Time**: `graduated_at` timestamp for analytics
+- **Algorithm Flexibility**: Support for multiple SRS algorithms (SM-2, Anki, FSRS)
+- **Performance Metrics**: Enhanced accuracy and difficulty tracking
 
 ---
 

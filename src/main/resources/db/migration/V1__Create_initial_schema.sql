@@ -64,7 +64,6 @@ CREATE TABLE decks (
     cover_image_url VARCHAR(500),
     tags JSONB,
     is_system_deck BOOLEAN DEFAULT FALSE,
-    is_public BOOLEAN DEFAULT FALSE,
     download_count BIGINT DEFAULT 0,
     like_count BIGINT DEFAULT 0,
     card_count INTEGER DEFAULT 0,
@@ -127,6 +126,12 @@ CREATE TABLE study_states (
     correct_reviews INTEGER DEFAULT 0,
     accuracy_rate DOUBLE PRECISION DEFAULT 0.0,
     
+    -- New SRS fields for enhanced algorithm
+    consecutive_failures INTEGER NOT NULL DEFAULT 0,
+    current_learning_step INTEGER DEFAULT NULL,
+    is_leech BOOLEAN NOT NULL DEFAULT FALSE,
+    graduated_at TIMESTAMP DEFAULT NULL,
+    
     -- Audit fields
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -135,7 +140,7 @@ CREATE TABLE study_states (
     CONSTRAINT fk_study_states_user FOREIGN KEY (user_id) REFERENCES users(id),
     CONSTRAINT fk_study_states_card FOREIGN KEY (card_id) REFERENCES cards(id),
     CONSTRAINT fk_study_states_deck FOREIGN KEY (deck_id) REFERENCES decks(id),
-    CONSTRAINT chk_study_states_ease_factor CHECK (ease_factor >= 1.3 AND ease_factor <= 2.5),
+    CONSTRAINT chk_study_states_ease_factor CHECK (ease_factor >= 1.3 AND ease_factor <= 3.0),
     CONSTRAINT chk_study_states_card_state CHECK (card_state IN ('NEW', 'LEARNING', 'REVIEW', 'RELEARNING')),
     CONSTRAINT uk_study_states_user_card UNIQUE (user_id, card_id)
 );
@@ -241,12 +246,11 @@ CREATE INDEX idx_topics_display_order ON topics(display_order);
 CREATE INDEX idx_decks_user_id ON decks(user_id);
 CREATE INDEX idx_decks_topic_id ON decks(topic_id);
 CREATE INDEX idx_decks_visibility ON decks(visibility);
-CREATE INDEX idx_decks_public ON decks(is_public);
 CREATE INDEX idx_decks_system ON decks(is_system_deck);
 CREATE INDEX idx_decks_deleted ON decks(deleted);
 CREATE INDEX idx_decks_deleted_at ON decks(deleted_at);
 CREATE INDEX idx_decks_user_visibility ON decks(user_id, visibility);
-CREATE INDEX idx_decks_public_visibility ON decks(is_public, visibility) WHERE is_public = true;
+CREATE INDEX idx_decks_public_only ON decks(visibility) WHERE visibility = 'PUBLIC';
 
 -- JSONB indexes for decks tags
 CREATE INDEX idx_decks_tags_gin ON decks USING GIN(tags);
@@ -276,6 +280,10 @@ CREATE INDEX idx_study_states_user_due ON study_states(user_id, due_date);
 CREATE INDEX idx_study_states_deck_id ON study_states(deck_id);
 CREATE INDEX idx_study_states_card_state ON study_states(card_state);
 CREATE INDEX idx_study_states_user_state ON study_states(user_id, card_state);
+
+-- Indexes for new SRS fields
+CREATE INDEX idx_study_states_is_leech ON study_states(user_id, is_leech) WHERE is_leech = TRUE;
+CREATE INDEX idx_study_states_learning_step ON study_states(user_id, current_learning_step) WHERE current_learning_step IS NOT NULL;
 
 -- Review sessions table indexes
 CREATE INDEX idx_review_sessions_user ON review_sessions(user_id);

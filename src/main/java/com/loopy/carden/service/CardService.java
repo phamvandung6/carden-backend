@@ -162,9 +162,7 @@ public class CardService {
     }
 
     public long getCardCountByDeck(Long deckId) {
-        var deck = new Deck();
-        deck.setId(deckId);
-        return cardRepository.countByDeck(deck);
+        return cardRepository.countByDeckId(deckId);
     }
 
     // Helper methods
@@ -198,11 +196,11 @@ public class CardService {
     }
 
     private int getNextDisplayOrder(Deck deck) {
-        return (int) cardRepository.countByDeck(deck) + 1;
+        return (int) cardRepository.countByDeckId(deck.getId()) + 1;
     }
 
     private void updateDeckCardCount(Deck deck) {
-        long cardCount = cardRepository.countByDeck(deck);
+        long cardCount = cardRepository.countByDeckId(deck.getId());
         deck.setCardCount((int) cardCount);
         // Note: This would require DeckRepository.save(deck) but we don't want circular dependency
         // This should be handled by a separate service or event
@@ -231,11 +229,8 @@ public class CardService {
     private void verifyDeckAccess(User requester, Deck deck) {
         // Check if user owns the deck or if deck is public
         if (!deck.getUser().getId().equals(requester.getId()) && 
-            !deck.isPublic() && 
             deck.getVisibility() != Deck.Visibility.PUBLIC) {
             throw new ResourceNotFoundException("Deck not found");
         }
     }
-
-
 }
