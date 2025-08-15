@@ -11,8 +11,12 @@ public final class UserMapper {
 
     public static UserProfileDto toUserProfileDto(User user) {
         return UserProfileDto.builder()
+                .id(user.getId())
+                .username(user.getUsername())
                 .displayName(user.getDisplayName())
                 .email(user.getEmail())
+                .role(user.getRole().name())
+                .emailVerified(user.isEmailVerified())
                 .uiLanguage(UiLanguage.valueOf(user.getUiLanguage().toUpperCase()))
                 .timezone(user.getTimezone())
                 .learningGoalCardsPerDay(user.getLearningGoalCardsPerDay())

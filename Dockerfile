@@ -1,5 +1,5 @@
 # Multi-stage build for production
-FROM openjdk:21-jdk-slim as builder
+FROM eclipse-temurin:17-jdk as builder
 
 WORKDIR /app
 COPY gradle gradle
@@ -11,7 +11,7 @@ RUN chmod +x ./gradlew
 RUN ./gradlew bootJar --no-daemon
 
 # Production stage
-FROM openjdk:21-jre-slim
+FROM eclipse-temurin:17-jre
 
 # Install additional packages for production
 RUN apt-get update && apt-get install -y \

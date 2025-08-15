@@ -94,13 +94,13 @@ prod-setup: ## Setup production environment
 
 prod-build: ## Build production Docker image
 	@echo "🏗️ Building production Docker image..."
-	@docker-compose -f docker-compose.prod.yml build app
+	@docker-compose -f docker-compose.prod.yml --env-file .env.prod build app
 
 prod-deploy: ## Deploy to production
 	@echo "🚀 Deploying to production..."
 	@make prod-setup
 	@make prod-backup || echo "⚠️  No existing database to backup"
-	@docker-compose -f docker-compose.prod.yml up -d --remove-orphans
+	@docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
 	@echo "⏳ Waiting for services to start..."
 	@sleep 30
 	@make prod-health
@@ -108,25 +108,25 @@ prod-deploy: ## Deploy to production
 
 prod-start: ## Start production environment
 	@echo "▶️  Starting production environment..."
-	@docker-compose -f docker-compose.prod.yml up -d
+	@docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
 
 prod-stop: ## Stop production environment
 	@echo "⏹️  Stopping production environment..."
-	@docker-compose -f docker-compose.prod.yml down
+	@docker-compose -f docker-compose.prod.yml --env-file .env.prod down
 
 prod-restart: ## Restart production environment
 	@echo "🔄 Restarting production environment..."
-	@docker-compose -f docker-compose.prod.yml restart
+	@docker-compose -f docker-compose.prod.yml --env-file .env.prod restart
 
 prod-logs: ## View production logs
-	@docker-compose -f docker-compose.prod.yml logs -f app
+	@docker-compose -f docker-compose.prod.yml --env-file .env.prod logs -f app
 
 prod-backup: ## Backup production database
 	@echo "💾 Creating production database backup..."
 	@if [ ! -f .env.prod ]; then echo "❌ .env.prod not found!"; exit 1; fi
 	@source .env.prod && \
 	mkdir -p backups/prod && \
-	docker-compose -f docker-compose.prod.yml exec -T postgres pg_dump \
+	docker-compose -f docker-compose.prod.yml --env-file .env.prod exec -T postgres pg_dump \
 		-U $$DB_USERNAME -d $$DB_NAME \
 		--verbose --no-owner --no-privileges --clean --if-exists \
 		> backups/prod/backup_$$(date +%Y%m%d_%H%M%S).sql
@@ -136,15 +136,15 @@ prod-backup: ## Backup production database
 prod-health: ## Check production health
 	@echo "🏥 Checking production health..."
 	@echo "📊 Service Status:"
-	@docker-compose -f docker-compose.prod.yml ps
+	@docker-compose -f docker-compose.prod.yml --env-file .env.prod ps
 	@echo ""
 	@echo "🔍 Health Checks:"
 	@echo -n "Application: "
 	@curl -f http://localhost:8080/api/public/health >/dev/null 2>&1 && echo "✅ Healthy" || echo "❌ Unhealthy"
 	@echo -n "Database: "
-	@docker-compose -f docker-compose.prod.yml exec -T postgres pg_isready >/dev/null 2>&1 && echo "✅ Connected" || echo "❌ Failed"
+	@docker-compose -f docker-compose.prod.yml --env-file .env.prod exec -T postgres pg_isready >/dev/null 2>&1 && echo "✅ Connected" || echo "❌ Failed"
 	@echo -n "Redis: "
-	@docker-compose -f docker-compose.prod.yml exec -T redis redis-cli ping >/dev/null 2>&1 && echo "✅ Connected" || echo "❌ Failed"
+	@docker-compose -f docker-compose.prod.yml --env-file .env.prod exec -T redis redis-cli ping >/dev/null 2>&1 && echo "✅ Connected" || echo "❌ Failed"
 
 # Utility Commands
 clean-all: ## Clean all Docker resources

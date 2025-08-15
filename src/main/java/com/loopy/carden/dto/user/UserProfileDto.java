@@ -8,7 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO for user profile updates.
+ * DTO for user profile updates and responses.
  * All fields are optional to support partial updates.
  */
 @Data
@@ -17,12 +17,20 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserProfileDto {
 
+    private Long id;
+
+    private String username;
+
     @Size(max = 100, message = "Display name must not exceed 100 characters")
     private String displayName;
 
     @Email(message = "Email must be valid")
     @Size(max = 100, message = "Email must not exceed 100 characters")
     private String email;
+
+    private String role;
+
+    private Boolean emailVerified;
 
     private UiLanguage uiLanguage;
 

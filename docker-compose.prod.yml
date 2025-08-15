@@ -1,8 +1,8 @@
-version: '3.8'
-
 services:
   # Application Backend
   app:
+    env_file:
+      - .env.prod
     build:
       context: .
       dockerfile: Dockerfile
@@ -17,9 +17,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       
       # Redis
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # REDIS_HOST: redis
+      # REDIS_PORT: 6379
+      # REDIS_PASSWORD: ${REDIS_PASSWORD}
       
       # JWT
       JWT_SECRET: ${JWT_SECRET}
@@ -42,8 +42,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      # redis:
+      #   condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/public/health"]
       interval: 30s
@@ -53,6 +53,8 @@ services:
 
   # PostgreSQL Database
   postgres:
+    env_file:
+      - .env.prod
     image: postgres:15-alpine
     container_name: carden-postgres-prod
     restart: unless-stopped
@@ -86,28 +88,28 @@ services:
       -c default_statistics_target=100
 
   # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: carden-redis-prod
-    restart: unless-stopped
-    command: >
-      redis-server
-      --requirepass ${REDIS_PASSWORD}
-      --appendonly yes
-      --appendfsync everysec
-      --maxmemory 512mb
-      --maxmemory-policy allkeys-lru
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - carden-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: carden-redis-prod
+  #   restart: unless-stopped
+  #   command: >
+  #     redis-server
+  #     --requirepass ${REDIS_PASSWORD}
+  #     --appendonly yes
+  #     --appendfsync everysec
+  #     --maxmemory 512mb
+  #     --maxmemory-policy allkeys-lru
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - carden-network
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 5
 
   # Nginx Reverse Proxy (Optional)
   nginx:
@@ -132,8 +134,8 @@ volumes:
     driver: local
   postgres_backups:
     driver: local
-  redis_data:
-    driver: local
+  # redis_data:
+  #   driver: local
   app_logs:
     driver: local
   nginx_logs:
