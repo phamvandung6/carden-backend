@@ -2,6 +2,7 @@ package com.loopy.carden.mapper;
 
 import com.loopy.carden.dto.practice.PracticeCardDto;
 import com.loopy.carden.dto.studystate.StudyStateResponseDto;
+import com.loopy.carden.entity.Card;
 import com.loopy.carden.entity.StudyState;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -55,6 +56,24 @@ public class PracticeMapper {
         dto.setRemainingLearningCards(0); // TODO: Implement if needed
         
         return dto;
+    }
+
+    /**
+     * Copy base properties from Card to any PracticeCardDto subclass
+     */
+    public void copyBasePracticeCardProperties(Card card, PracticeCardDto dto) {
+        dto.setCardId(card.getId());
+        dto.setFrontText(card.getFront());
+        dto.setFrontImageUrl(card.getImageUrl());
+        dto.setBackDefinition(card.getBack());
+        dto.setBackMeaningVi(card.getBack());
+        dto.setIpa(card.getIpaPronunciation());
+        dto.setDeckId(card.getDeck().getId());
+        dto.setDeckTitle(card.getDeck().getTitle());
+        dto.setShowAnswer(false);
+        dto.setRemainingNewCards(0);
+        dto.setRemainingReviewCards(0);
+        dto.setRemainingLearningCards(0);
     }
 
     /**

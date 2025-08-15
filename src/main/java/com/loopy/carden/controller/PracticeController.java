@@ -182,5 +182,49 @@ public class PracticeController {
         return ResponseEntity.ok(StandardResponse.success(stats));
     }
 
+    // ===== Study Mode Specific Endpoints =====
 
+    @GetMapping("/cards/{cardId}/type-answer")
+    @Operation(summary = "Get card formatted for type-answer mode",
+               description = "Returns a card with type-answer mode specific formatting and hints")
+    public ResponseEntity<StandardResponse<TypeAnswerCardDto>> getTypeAnswerCard(
+            @PathVariable Long cardId,
+            @AuthenticationPrincipal User user) {
+        
+        TypeAnswerCardDto card = practiceService.getTypeAnswerCard(cardId, user.getId());
+        return ResponseEntity.ok(StandardResponse.success(card));
+    }
+
+    @GetMapping("/cards/{cardId}/multiple-choice")
+    @Operation(summary = "Get card formatted for multiple choice mode",
+               description = "Returns a card with multiple choice options and intelligent distractors")
+    public ResponseEntity<StandardResponse<MultipleChoiceCardDto>> getMultipleChoiceCard(
+            @PathVariable Long cardId,
+            @AuthenticationPrincipal User user) {
+        
+        MultipleChoiceCardDto card = practiceService.getMultipleChoiceCard(cardId, user.getId());
+        return ResponseEntity.ok(StandardResponse.success(card));
+    }
+
+    @PostMapping("/cards/type-answer/review")
+    @Operation(summary = "Submit type-answer mode review",
+               description = "Submit user's typed answer for validation and SRS processing")
+    public ResponseEntity<StandardResponse<ReviewResultDto>> submitTypeAnswerReview(
+            @Valid @RequestBody TypeAnswerSubmissionDto submission,
+            @AuthenticationPrincipal User user) {
+        
+        ReviewResultDto result = practiceService.submitTypeAnswerReview(user.getId(), submission);
+        return ResponseEntity.ok(StandardResponse.success(result));
+    }
+
+    @PostMapping("/cards/multiple-choice/review")
+    @Operation(summary = "Submit multiple choice mode review",
+               description = "Submit user's selected option for validation and SRS processing")
+    public ResponseEntity<StandardResponse<ReviewResultDto>> submitMultipleChoiceReview(
+            @Valid @RequestBody MultipleChoiceSubmissionDto submission,
+            @AuthenticationPrincipal User user) {
+        
+        ReviewResultDto result = practiceService.submitMultipleChoiceReview(user.getId(), submission);
+        return ResponseEntity.ok(StandardResponse.success(result));
+    }
 }

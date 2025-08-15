@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +33,8 @@ public class PracticeService {
     private final ReviewSessionService reviewSessionService;
     private final CardRepository cardRepository;
     private final PracticeMapper practiceMapper;
+    private final AnswerValidationService answerValidationService;
+    private final DistractorGenerationService distractorGenerationService;
 
     /**
      * Start a new practice session
@@ -166,12 +170,17 @@ public class PracticeService {
             progress.setSessionDurationMinutes(session.getDurationMinutes());
         }
         
-        ReviewResultDto result = new ReviewResultDto();
-        result.setSuccess(true);
-        result.setMessage(getReviewMessage(reviewDto.getGrade()));
-        result.setUpdatedStudyState(practiceMapper.toSimplifiedStudyStateDto(updatedState));
-        result.setNextCard(nextCard);
-        result.setSessionProgress(progress);
+        ReviewResultDto result = ReviewResultDto.builder()
+                .cardId(cardId)
+                .grade(reviewDto.getGrade())
+                .isCorrect(reviewDto.getGrade() >= 2)
+                .feedback(getReviewMessage(reviewDto.getGrade()))
+                .message(getReviewMessage(reviewDto.getGrade()))
+                .success(true)
+                .updatedStudyState(practiceMapper.toSimplifiedStudyStateDto(updatedState))
+                .nextCard(nextCard)
+                .sessionProgress(progress)
+                .build();
         
         log.debug("Processed review for card {} with grade {} for user {}", 
                 cardId, reviewDto.getGrade(), userId);
@@ -235,6 +244,144 @@ public class PracticeService {
                 .build();
     }
 
+    /**
+     * Get card for type-answer mode
+     */
+    @Transactional(readOnly = true)
+    public TypeAnswerCardDto getTypeAnswerCard(Long cardId, Long userId) {
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new ResourceNotFoundException("Card not found: " + cardId));
+        
+        TypeAnswerCardDto dto = new TypeAnswerCardDto();
+        // Copy base properties from PracticeCardDto
+        practiceMapper.copyBasePracticeCardProperties(card, dto);
+        
+        // Set type-answer specific properties
+        dto.setPlaceholder("Type your answer here...");
+        dto.setMaxLength(card.getBack().length() + 20); // Allow some extra length
+        dto.setCaseSensitive(false);
+        dto.setShowHint(true);
+        
+        return dto;
+    }
+
+    /**
+     * Get card for multiple choice mode
+     */
+    @Transactional(readOnly = true)
+    public MultipleChoiceCardDto getMultipleChoiceCard(Long cardId, Long userId) {
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new ResourceNotFoundException("Card not found: " + cardId));
+        
+        MultipleChoiceCardDto dto = new MultipleChoiceCardDto();
+        // Copy base properties from PracticeCardDto
+        practiceMapper.copyBasePracticeCardProperties(card, dto);
+        
+        // Generate distractors
+        List<String> distractors = distractorGenerationService.generateDistractors(card, 3);
+        
+        // Create options (1 correct + 3 distractors)
+        List<MultipleChoiceCardDto.ChoiceOption> options = new ArrayList<>();
+        options.add(new MultipleChoiceCardDto.ChoiceOption(card.getBack(), true));
+        
+        for (String distractor : distractors) {
+            options.add(new MultipleChoiceCardDto.ChoiceOption(distractor, false));
+        }
+        
+        // Shuffle options
+        Collections.shuffle(options);
+        
+        // Find correct option index after shuffling
+        int correctIndex = 0;
+        for (int i = 0; i < options.size(); i++) {
+            if (options.get(i).isCorrect()) {
+                correctIndex = i;
+                break;
+            }
+        }
+        
+        dto.setOptions(options);
+        dto.setCorrectOptionIndex(correctIndex);
+        dto.setShuffled(true);
+        
+        return dto;
+    }
+
+    /**
+     * Submit type-answer review
+     */
+    public ReviewResultDto submitTypeAnswerReview(Long userId, TypeAnswerSubmissionDto submission) {
+        Card card = cardRepository.findById(submission.getCardId())
+                .orElseThrow(() -> new ResourceNotFoundException("Card not found: " + submission.getCardId()));
+        
+        // Validate answer using fuzzy matching
+        AnswerValidationService.AnswerValidationResult validation = 
+                answerValidationService.validateAnswer(submission.getUserAnswer(), card.getBack());
+        
+        int grade = validation.getGrade();
+        
+        // Process the review with SRS
+        StudyState updatedState = studyStateService.processReview(
+                submission.getCardId(), userId, grade, LocalDateTime.now());
+        
+        // Update session statistics (TODO: Add this method to ReviewSessionService)
+        // reviewSessionService.updateSessionProgress(userId, 1, validation.isCorrect() ? 1 : 0);
+        
+        log.info("Type-answer review processed for user {} card {} with grade {} (similarity: {:.2f})", 
+                userId, submission.getCardId(), grade, validation.getSimilarity());
+        
+        return ReviewResultDto.builder()
+                .cardId(submission.getCardId())
+                .grade(grade)
+                .isCorrect(validation.isCorrect())
+                .feedback(validation.getFeedback())
+                .similarity(validation.getSimilarity())
+                .correctAnswer(card.getBack())
+                .userAnswer(submission.getUserAnswer())
+                .nextReviewDate(updatedState.getDueDate())
+                .currentState(updatedState.getCardState().name())
+                .message(getTypeAnswerMessage(validation))
+                .build();
+    }
+
+    /**
+     * Submit multiple choice review
+     */
+    public ReviewResultDto submitMultipleChoiceReview(Long userId, MultipleChoiceSubmissionDto submission) {
+        Card card = cardRepository.findById(submission.getCardId())
+                .orElseThrow(() -> new ResourceNotFoundException("Card not found: " + submission.getCardId()));
+        
+        // Get the multiple choice card to check correct answer
+        MultipleChoiceCardDto mcCard = getMultipleChoiceCard(submission.getCardId(), userId);
+        
+        boolean isCorrect = submission.getSelectedOption().equals(mcCard.getCorrectOptionIndex());
+        int grade = isCorrect ? 2 : 0; // Good for correct, Again for incorrect in MC
+        
+        // Process the review with SRS
+        StudyState updatedState = studyStateService.processReview(
+                submission.getCardId(), userId, grade, LocalDateTime.now());
+        
+        // Update session statistics (TODO: Add this method to ReviewSessionService)
+        // reviewSessionService.updateSessionProgress(userId, 1, isCorrect ? 1 : 0);
+        
+        log.info("Multiple choice review processed for user {} card {} with grade {} (option: {})", 
+                userId, submission.getCardId(), grade, submission.getSelectedOption());
+        
+        String selectedText = mcCard.getOptions().get(submission.getSelectedOption()).getText();
+        
+        return ReviewResultDto.builder()
+                .cardId(submission.getCardId())
+                .grade(grade)
+                .isCorrect(isCorrect)
+                .feedback(isCorrect ? "Correct!" : "Incorrect. The right answer was: " + card.getBack())
+                .correctAnswer(card.getBack())
+                .userAnswer(selectedText)
+                .nextReviewDate(updatedState.getDueDate())
+                .currentState(updatedState.getCardState().name())
+                .message(getMultipleChoiceMessage(isCorrect))
+                .build();
+    }
+
     // Helper methods
     private String getReviewMessage(int grade) {
         return switch (grade) {
@@ -244,5 +391,31 @@ public class PracticeService {
             case 3 -> "Excellent! This card has been scheduled for later review.";
             default -> "Review processed successfully.";
         };
+    }
+
+    private String getTypeAnswerMessage(AnswerValidationService.AnswerValidationResult validation) {
+        if (validation.isCorrect()) {
+            if (validation.getSimilarity() >= 0.95) {
+                return "Perfect! Your answer was spot on.";
+            } else if (validation.getSimilarity() >= 0.90) {
+                return "Great! Your answer was very close.";
+            } else {
+                return "Good! Your answer was close enough to be accepted.";
+            }
+        } else {
+            if (validation.getSimilarity() > 0.7) {
+                return "Very close! Check your spelling and try again.";
+            } else if (validation.getSimilarity() > 0.4) {
+                return "You're on the right track, but not quite there yet.";
+            } else {
+                return "Let's review this card again. Take your time!";
+            }
+        }
+    }
+
+    private String getMultipleChoiceMessage(boolean isCorrect) {
+        return isCorrect ? 
+                "Correct! Well done." : 
+                "Incorrect. Review the correct answer and try to remember it for next time.";
     }
 }

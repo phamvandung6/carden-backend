@@ -101,4 +101,34 @@ public interface CardRepository extends JpaRepository<Card, Long>, JpaSpecificat
         @Param("hasAudio") Boolean hasAudio,
         Pageable pageable
     );
+
+    // Methods for distractor generation
+    @Query(value = "SELECT * FROM cards c " +
+           "WHERE c.deck_id = :deckId AND c.id != :excludeId " +
+           "AND c.deleted = false " +
+           "ORDER BY RANDOM() LIMIT :limit", 
+           nativeQuery = true)
+    List<Card> findRandomCardsByDeckExcluding(@Param("deckId") Long deckId, 
+                                            @Param("excludeId") Long excludeId, 
+                                            @Param("limit") int limit);
+
+    @Query(value = "SELECT * FROM cards c " +
+           "WHERE c.difficulty = :difficulty AND c.id != :excludeId " +
+           "AND c.deleted = false " +
+           "ORDER BY RANDOM() LIMIT :limit", 
+           nativeQuery = true)
+    List<Card> findRandomCardsByDifficultyExcluding(@Param("difficulty") String difficulty,
+                                                   @Param("excludeId") Long excludeId, 
+                                                   @Param("limit") int limit);
+
+    @Query(value = "SELECT * FROM cards c " +
+           "WHERE c.tags @> :tagJson AND c.id != :excludeId " +
+           "AND c.deleted = false " +
+           "ORDER BY RANDOM() LIMIT :limit", 
+           nativeQuery = true)
+    List<Card> findRandomCardsByTagExcluding(@Param("tagJson") String tagJson,
+                                           @Param("excludeId") Long excludeId, 
+                                           @Param("limit") int limit);
+    
+
 }
