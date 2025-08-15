@@ -7,7 +7,7 @@ Hệ thống học tập thông minh với thuật toán SRS dựa trên SM-2/An
 ## Workflow Cơ Bản
 
 ### 1. Bắt đầu Practice Session
-**Endpoint:** `POST /v1/practice/sessions`
+**Endpoint:** `POST /api/v1/practice/sessions`
 
 **Request Body:**
 ```json
@@ -23,10 +23,10 @@ Hệ thống học tập thông minh với thuật toán SRS dựa trên SM-2/An
 ```
 
 ### 2. Lấy Session Hiện Tại
-**Endpoint:** `GET /v1/practice/sessions/current`
+**Endpoint:** `GET /api/v1/practice/sessions/current`
 
 ### 3. Lấy Card Tiếp Theo
-**Endpoint:** `GET /v1/practice/next-card?deckId=3`
+**Endpoint:** `GET /api/v1/practice/next-card?deckId=3`
 
 **Logic Ưu Tiên:**
 1. **Learning cards** (due) - Card đang học và đến hạn
@@ -35,7 +35,7 @@ Hệ thống học tập thông minh với thuật toán SRS dựa trên SM-2/An
 4. **Cards without StudyState** - Card thực sự mới chưa học bao giờ
 
 ### 4. Submit Review (Đánh giá Card)
-**Endpoint:** `POST /v1/practice/cards/{cardId}/review`
+**Endpoint:** `POST /api/v1/practice/cards/{cardId}/review`
 
 **Request Body:**
 ```json
@@ -54,26 +54,28 @@ Hệ thống học tập thông minh với thuật toán SRS dựa trên SM-2/An
 - **3 (Easy)**: Quá dễ → Graduate ngay hoặc interval dài, tăng ease factor
 
 ### 5. Hoàn Thành Session
-**Endpoint:** `POST /v1/practice/sessions/{sessionId}/complete`
+**Endpoint:** `POST /api/v1/practice/sessions/{sessionId}/complete`
 
 ## Endpoints Truy Vấn
 
 ### 1. Due Cards
-**Endpoint:** `GET /v1/practice/due-cards?deckId=3&page=0&size=20`
+**Endpoint:** `GET /api/v1/practice/due-cards?deckId=3&page=0&size=20`
 
 ### 2. New Cards  
-**Endpoint:** `GET /v1/practice/cards/new?deckId=3&page=0&size=20`
+**Endpoint:** `GET /api/v1/practice/cards/new?deckId=3&page=0&size=20`
 
 ### 3. Learning Cards
-**Endpoint:** `GET /v1/practice/cards/learning?deckId=3`
+**Endpoint:** `GET /api/v1/practice/cards/learning?deckId=3`
 
 ### 4. Due Cards Count
-**Endpoint:** `GET /v1/practice/cards/due-count?deckId=3`
+**Endpoint:** `GET /api/v1/practice/cards/due-count?deckId=3`
 
-## Endpoints Thống Kê
+## Endpoints Analytics & Thống Kê
+
+**Lưu ý:** Các endpoint thống kê đã được chuyển sang `/api/v1/analytics` để tổ chức tốt hơn.
 
 ### 1. User Statistics (Tổng Quan)
-**Endpoint:** `GET /v1/practice/statistics`
+**Endpoint:** `GET /api/v1/analytics/overview`
 
 **Thông tin trả về:**
 - Total cards studied, sessions completed
@@ -82,10 +84,28 @@ Hệ thống học tập thông minh với thuật toán SRS dựa trên SM-2/An
 - Recent activity, study efficiency
 
 ### 2. Simplified Statistics (Dashboard)
-**Endpoint:** `GET /v1/practice/statistics/simplified`
+**Endpoint:** `GET /api/v1/analytics/overview/simplified`
 
-### 3. Deck-Specific Statistics
-**Endpoint:** `GET /v1/practice/deck/{deckId}/statistics`
+### 3. Performance Statistics
+**Endpoint:** `GET /api/v1/analytics/performance?period=30d`
+
+**Parameters:**
+- `period`: 7d, 30d, 90d, 1y
+- `startDate`, `endDate`: Custom date range (ISO format)
+
+### 4. Study Streaks
+**Endpoint:** `GET /api/v1/analytics/streaks`
+
+### 5. Deck-Specific Statistics
+**Endpoint:** `GET /api/v1/analytics/deck/{deckId}`
+
+### 6. Analytics Summary (Dashboard)
+**Endpoint:** `GET /api/v1/analytics/summary`
+
+### 7. Study Insights
+**Endpoint:** `GET /api/v1/analytics/insights`
+
+**Trả về:** AI-generated insights và recommendations dựa trên study patterns
 
 ## SRS Algorithm Chi Tiết
 
@@ -184,33 +204,62 @@ getNextCard() priority:
 }
 ```
 
+### Card Not Found
+```json
+{
+  "success": false,
+  "message": "Card not found with id: {cardId}"
+}
+```
+
 ## Test Cases Đã Verify
 
 ### 1. Card Workflow
 ✅ NEW card → Review với grade 2 → LEARNING state  
-✅ LEARNING card → Review với grade 3 → REVIEW state (graduate)  
-✅ REVIEW card → Review với grade 0 → RELEARNING state
+✅ NEW card → Review với grade 3 → REVIEW state (graduate ngay)  
+✅ LEARNING card → Review với grade 2 → Tiến lên learning step tiếp theo
+✅ LEARNING card → Review với grade 3 → REVIEW state (graduate)
 
 ### 2. Session Flow  
 ✅ Start session → Practice cards → Complete session  
 ✅ Session statistics: accuracy, duration, card counts
+✅ Session completion với summary đầy đủ
 
-### 3. Statistics
-✅ User statistics: total cards, accuracy, streaks  
-✅ Deck statistics: mastery, completion rates  
-✅ Due cards count and distribution
+### 3. Analytics & Statistics
+✅ User statistics overview: total cards, accuracy, streaks  
+✅ Simplified overview cho dashboard
+✅ Performance statistics với period presets
+✅ Study streaks tracking
+✅ Deck-specific statistics
+✅ Analytics summary tổng hợp
+✅ AI-generated study insights
 
 ### 4. Edge Cases
 ✅ Cards without StudyState được handle đúng  
 ✅ Ease factor không vượt quá 3.0  
 ✅ SQL recursive query hoạt động (study streak)
+✅ Validation grade 0-3
+✅ Error handling cho card không tồn tại
+✅ Next card hoạt động ngay cả khi không có session active
+
+### 5. SRS Algorithm Verification
+✅ Learning steps progression: 1min → 10min → 1day
+✅ Grade 0 (Again): Reset về step đầu
+✅ Grade 1 (Hard): Lặp lại step hiện tại  
+✅ Grade 2 (Good): Tiến lên step tiếp theo
+✅ Grade 3 (Easy): Graduate ngay lập tức
+✅ Interval calculation chính xác
+✅ Card state transitions đúng
 
 ## Notes cho Developer
 
 1. **Database**: StudyState table quan trọng nhất, chứa toàn bộ SRS state
 2. **Performance**: Index trên (user_id, due_date) cho due cards query
 3. **Migration**: V2 migration update ease_factor constraint 1.3-3.0
-4. **Testing**: Đã verify end-to-end flow từ create card → practice → statistics
+4. **Testing**: Đã verify end-to-end flow từ create card → practice → analytics
+5. **API Organization**: Analytics endpoints đã được tách riêng khỏi practice endpoints
+6. **Session Management**: getNextCard() hoạt động độc lập với session state
+7. **Error Handling**: Validation và error messages đã được implement đầy đủ
 
 ## Luồng Practice - Biểu Đồ Mermaid
 
@@ -300,4 +349,32 @@ graph LR
     B -->|RELEARNING| M[Same as LEARNING]
 ```
 
-Hệ thống Practice SRS đã được test hoàn chỉnh và sẵn sàng production! 🚀
+### 5. Analytics & Statistics Flow
+```mermaid
+graph TD
+    A[Practice Session] --> B[StudyState Updates]
+    B --> C[Statistics Calculation]
+    C --> D[Analytics Endpoints]
+    
+    D --> E[User Overview]
+    D --> F[Performance Stats]
+    D --> G[Study Streaks]
+    D --> H[Deck Statistics]
+    D --> I[Study Insights]
+    
+    E --> J[Dashboard Display]
+    F --> J
+    G --> J
+    H --> J
+    I --> J
+```
+
+Hệ thống Practice SRS và Analytics đã được test hoàn chỉnh và sẵn sàng production! 🚀
+
+**Key Features Verified:**
+- ✅ SRS Algorithm hoạt động chính xác
+- ✅ Practice Session Management
+- ✅ Card State Transitions
+- ✅ Analytics & Statistics
+- ✅ Error Handling & Validation
+- ✅ Performance & Scalability

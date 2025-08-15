@@ -2,10 +2,10 @@ package com.loopy.carden.controller;
 
 import com.loopy.carden.dto.StandardResponse;
 import com.loopy.carden.dto.practice.*;
-import com.loopy.carden.dto.statistics.UserStatisticsDto;
+
 import com.loopy.carden.entity.User;
 import com.loopy.carden.service.PracticeService;
-import com.loopy.carden.service.StatisticsService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,7 +30,6 @@ import java.util.List;
 public class PracticeController {
 
     private final PracticeService practiceService;
-    private final StatisticsService statisticsService;
 
     @PostMapping("/sessions")
     @Operation(summary = "Start a new practice session",
@@ -103,33 +102,7 @@ public class PracticeController {
         return ResponseEntity.ok(StandardResponse.success(result));
     }
 
-    @GetMapping("/statistics")
-    @Operation(summary = "Get user practice statistics",
-               description = "Comprehensive statistics including accuracy, streaks, and performance metrics")
-    public ResponseEntity<StandardResponse<UserStatisticsDto>> getStatistics(
-            @AuthenticationPrincipal User user) {
-        
-        UserStatisticsDto stats = statisticsService.getUserStatistics(user.getId());
-        return ResponseEntity.ok(StandardResponse.success(stats));
-    }
 
-    @GetMapping("/statistics/simplified")
-    @Operation(summary = "Get simplified practice statistics for dashboard")
-    public ResponseEntity<StandardResponse<UserStatisticsDto.SimplifiedDto>> getSimplifiedStatistics(
-            @AuthenticationPrincipal User user) {
-        
-        UserStatisticsDto fullStats = statisticsService.getUserStatistics(user.getId());
-        UserStatisticsDto.SimplifiedDto simplified = UserStatisticsDto.SimplifiedDto.builder()
-                .userId(user.getId())
-                .totalCards(fullStats.getTotalCards())
-                .currentStreak(fullStats.getCurrentStreak())
-                .overallAccuracy(fullStats.getOverallAccuracy())
-                .recentSessionCount(fullStats.getRecentSessionCount())
-                .lastActivityDate(fullStats.getLastActivityDate())
-                .build();
-        
-        return ResponseEntity.ok(StandardResponse.success(simplified));
-    }
 
     @GetMapping("/cards/due-count")
     @Operation(summary = "Get count of due cards",
