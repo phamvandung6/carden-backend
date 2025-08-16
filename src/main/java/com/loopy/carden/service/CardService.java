@@ -165,6 +165,21 @@ public class CardService {
         return cardRepository.countByDeckId(deckId);
     }
 
+    @Transactional
+    public String confirmImageUpload(User owner, Long cardId, String publicUrl) {
+        var card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new ResourceNotFoundException("Card not found: " + cardId));
+        
+        // Verify deck ownership
+        verifyDeckOwnership(owner, card.getDeck());
+        
+        // Update card with new image URL
+        card.setImageUrl(publicUrl);
+        cardRepository.save(card);
+        
+        return publicUrl;
+    }
+
     // Helper methods
     private String generateUniqueKey(String front, String back) {
         if (front == null || back == null) {

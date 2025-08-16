@@ -62,6 +62,19 @@ public class DeckService {
         deckRepository.save(deck);
     }
 
+    @Transactional
+    public String confirmThumbnailUpload(User requester, Long deckId, String publicUrl) {
+        var deck = deckRepository.findById(deckId)
+                .orElseThrow(() -> new ResourceNotFoundException("Deck not found: " + deckId));
+        requireOwner(requester, deck);
+        
+        // Update deck with new cover image URL (thumbnail)
+        deck.setCoverImageUrl(publicUrl);
+        deckRepository.save(deck);
+        
+        return publicUrl;
+    }
+
     public Page<DeckResponseDto> search(User requester,
                                         String q,
                                         Long topicId,
