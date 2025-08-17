@@ -80,7 +80,7 @@ public class CardController {
         var cards = cardService.getCardsByDeck(user, deckId, search, difficulty, pageable);
         var cardDtos = cards.map(CardMapper::toResponseDto);
         
-        return ResponseEntity.ok(StandardResponse.success(cardDtos));
+        return ResponseEntity.ok(StandardResponse.success("Cards retrieved successfully", cardDtos));
     }
 
     @GetMapping("/cards/{cardId}")
@@ -92,7 +92,7 @@ public class CardController {
         User user = authentication != null ? (User) authentication.getPrincipal() : null;
         
         var card = cardService.getCard(user, cardId);
-        return ResponseEntity.ok(StandardResponse.success(CardMapper.toResponseDto(card)));
+        return ResponseEntity.ok(StandardResponse.success("Card retrieved successfully", CardMapper.toResponseDto(card)));
     }
 
     @PatchMapping("/cards/{cardId}")

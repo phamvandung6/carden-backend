@@ -12,6 +12,7 @@ import com.loopy.carden.repository.DeckSpecifications;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -81,13 +82,16 @@ public class DeckService {
                                         Deck.CEFRLevel cefr,
                                         boolean publicOnly,
                                         Pageable pageable) {
-        // Prefer full-text native search for public browsing
+        // Create pageable without sort for native query (native query has fixed ORDER BY)
+        Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        
+        // Use full-text native search for public browsing
         var page = deckRepository.searchFullTextNative(
                 isBlank(q) ? null : q,
                 publicOnly,
                 topicId,
                 cefr != null ? cefr.name() : null,
-                pageable
+                unsortedPageable
         );
         return page.map(DeckMapper::toResponseDto);
     }

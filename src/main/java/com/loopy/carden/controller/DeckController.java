@@ -50,7 +50,7 @@ public class DeckController {
                                                               @RequestParam(required = false) String sort) {
         Pageable pageable = createPageable(page, size, sort);
         var result = deckService.search(null, q, topicId, cefr, true, pageable);
-        return ResponseEntity.ok(StandardResponse.success(result));
+        return ResponseEntity.ok(StandardResponse.success("Public decks retrieved successfully", result));
     }
 
     @GetMapping("/me")
@@ -75,7 +75,7 @@ public class DeckController {
         User user = (User) authentication.getPrincipal();
         Pageable pageable = createPageable(page, size, sort);
         var result = deckService.searchOwned(user, q, topicId, cefr, pageable);
-        return ResponseEntity.ok(StandardResponse.success(result));
+        return ResponseEntity.ok(StandardResponse.success("Your decks retrieved successfully", result));
     }
 
     @PostMapping
@@ -94,7 +94,7 @@ public class DeckController {
     public ResponseEntity<StandardResponse<DeckResponseDto>> get(Authentication authentication, @PathVariable Long id) {
         User user = authentication != null ? (User) authentication.getPrincipal() : null;
         var dto = deckService.getDeck(user, id);
-        return ResponseEntity.ok(StandardResponse.success(dto));
+        return ResponseEntity.ok(StandardResponse.success("Deck retrieved successfully", dto));
     }
 
     @PatchMapping("/{id}")
