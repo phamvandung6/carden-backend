@@ -80,6 +80,8 @@ logging:
 app:
   jwt:
     access-token-expiration: PT15M # 15 minutes for production
+  security:
+    allowed-origins: ${ALLOWED_ORIGINS:https://yourdomain.com,https://www.yourdomain.com}
 
 r2:
   endpoint: ${R2_ENDPOINT:}
