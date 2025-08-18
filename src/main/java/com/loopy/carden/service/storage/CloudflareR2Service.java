@@ -54,6 +54,22 @@ public class CloudflareR2Service {
     public PresignedUpload createAvatarPresignedUpload(Long userId, String contentType) {
         String ext = extFromContentType(contentType);
         String key = "avatars/" + userId + "/" + Instant.now().toEpochMilli() + "_" + UUID.randomUUID() + ext;
+        return createPresignedUpload(key, contentType);
+    }
+
+    public PresignedUpload createDeckThumbnailPresignedUpload(Long deckId, String contentType) {
+        String ext = extFromContentType(contentType);
+        String key = "decks/" + deckId + "/thumbnail/" + Instant.now().toEpochMilli() + "_" + UUID.randomUUID() + ext;
+        return createPresignedUpload(key, contentType);
+    }
+
+    public PresignedUpload createCardImagePresignedUpload(Long cardId, String contentType) {
+        String ext = extFromContentType(contentType);
+        String key = "cards/" + cardId + "/images/" + Instant.now().toEpochMilli() + "_" + UUID.randomUUID() + ext;
+        return createPresignedUpload(key, contentType);
+    }
+
+    private PresignedUpload createPresignedUpload(String key, String contentType) {
         PutObjectRequest put = PutObjectRequest.builder()
                 .bucket(props.getBucket())
                 .key(key)

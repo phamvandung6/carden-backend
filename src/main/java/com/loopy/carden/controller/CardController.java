@@ -8,6 +8,7 @@ import com.loopy.carden.entity.Card;
 import com.loopy.carden.entity.User;
 import com.loopy.carden.mapper.CardMapper;
 import com.loopy.carden.service.CardService;
+import com.loopy.carden.service.storage.CloudflareR2Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -33,6 +34,7 @@ import java.util.List;
 public class CardController {
 
     private final CardService cardService;
+    private final CloudflareR2Service r2Service;
 
     @PostMapping("/decks/{deckId}/cards")
     @Operation(summary = "Create a new card in a deck")
@@ -78,7 +80,7 @@ public class CardController {
         var cards = cardService.getCardsByDeck(user, deckId, search, difficulty, pageable);
         var cardDtos = cards.map(CardMapper::toResponseDto);
         
-        return ResponseEntity.ok(StandardResponse.success(cardDtos));
+        return ResponseEntity.ok(StandardResponse.success("Cards retrieved successfully", cardDtos));
     }
 
     @GetMapping("/cards/{cardId}")
@@ -90,7 +92,7 @@ public class CardController {
         User user = authentication != null ? (User) authentication.getPrincipal() : null;
         
         var card = cardService.getCard(user, cardId);
-        return ResponseEntity.ok(StandardResponse.success(CardMapper.toResponseDto(card)));
+        return ResponseEntity.ok(StandardResponse.success("Card retrieved successfully", CardMapper.toResponseDto(card)));
     }
 
     @PatchMapping("/cards/{cardId}")
@@ -185,6 +187,40 @@ public class CardController {
                 .success(true)
                 .data(false)
                 .message("No duplicate found")
+                .build());
+    }
+
+    @PostMapping("/cards/{cardId}/image/presign")
+    @Operation(summary = "Get presigned URL for card image upload")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<StandardResponse<CloudflareR2Service.PresignedUpload>> presignImage(
+            Authentication authentication,
+            @PathVariable Long cardId,
+            @Parameter(description = "Content type of the file (e.g., image/jpeg, image/png)")
+            @RequestParam("contentType") String contentType) {
+        var presigned = r2Service.createCardImagePresignedUpload(cardId, contentType);
+        return ResponseEntity.ok(StandardResponse.<CloudflareR2Service.PresignedUpload>builder()
+                .success(true)
+                .data(presigned)
+                .build());
+    }
+
+    @PostMapping("/cards/{cardId}/image/confirm")
+    @Operation(summary = "Confirm card image upload and save to card")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<StandardResponse<String>> confirmImage(
+            Authentication authentication,
+            @PathVariable Long cardId,
+            @Parameter(description = "Public URL of the uploaded image")
+            @RequestParam("publicUrl") String publicUrl) {
+        User user = (User) authentication.getPrincipal();
+        String url = cardService.confirmImageUpload(user, cardId, publicUrl);
+        return ResponseEntity.ok(StandardResponse.<String>builder()
+                .success(true)
+                .message("Card image confirmed")
+                .data(url)
                 .build());
     }
 

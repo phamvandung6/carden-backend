@@ -28,7 +28,8 @@ public interface DeckRepository extends JpaRepository<Deck, Long>, JpaSpecificat
 			"AND (:publicOnly = FALSE OR d.visibility = 'PUBLIC') " +
 			"AND (:topicId IS NULL OR d.topic_id = :topicId) " +
 			"AND (:cefr IS NULL OR d.cefr_level = :cefr) " +
-			"AND d.deleted = FALSE",
+			"AND d.deleted = FALSE " +
+			"ORDER BY d.updated_at DESC",
 		countQuery = "SELECT count(*) FROM decks d " +
 			"WHERE (:q IS NULL OR (" +
 			"  to_tsvector('english', coalesce(d.title,'') || ' ' || coalesce(d.description,'')) @@ plainto_tsquery('english', :q) " +

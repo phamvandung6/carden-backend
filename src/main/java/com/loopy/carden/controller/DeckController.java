@@ -7,10 +7,9 @@ import com.loopy.carden.dto.deck.DeckUpdateDto;
 import com.loopy.carden.entity.Deck;
 import com.loopy.carden.entity.User;
 import com.loopy.carden.service.DeckService;
+import com.loopy.carden.service.storage.CloudflareR2Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 public class DeckController {
 
     private final DeckService deckService;
+    private final CloudflareR2Service r2Service;
 
     @GetMapping
     @Operation(
@@ -50,7 +50,7 @@ public class DeckController {
                                                               @RequestParam(required = false) String sort) {
         Pageable pageable = createPageable(page, size, sort);
         var result = deckService.search(null, q, topicId, cefr, true, pageable);
-        return ResponseEntity.ok(StandardResponse.success(result));
+        return ResponseEntity.ok(StandardResponse.success("Public decks retrieved successfully", result));
     }
 
     @GetMapping("/me")
@@ -75,7 +75,7 @@ public class DeckController {
         User user = (User) authentication.getPrincipal();
         Pageable pageable = createPageable(page, size, sort);
         var result = deckService.searchOwned(user, q, topicId, cefr, pageable);
-        return ResponseEntity.ok(StandardResponse.success(result));
+        return ResponseEntity.ok(StandardResponse.success("Your decks retrieved successfully", result));
     }
 
     @PostMapping
@@ -94,7 +94,7 @@ public class DeckController {
     public ResponseEntity<StandardResponse<DeckResponseDto>> get(Authentication authentication, @PathVariable Long id) {
         User user = authentication != null ? (User) authentication.getPrincipal() : null;
         var dto = deckService.getDeck(user, id);
-        return ResponseEntity.ok(StandardResponse.success(dto));
+        return ResponseEntity.ok(StandardResponse.success("Deck retrieved successfully", dto));
     }
 
     @PatchMapping("/{id}")
@@ -117,6 +117,40 @@ public class DeckController {
         User user = (User) authentication.getPrincipal();
         deckService.deleteDeck(user, id);
         return ResponseEntity.ok(StandardResponse.<Void>builder().success(true).message("Deleted").build());
+    }
+
+    @PostMapping("/{id}/thumbnail/presign")
+    @Operation(summary = "Get presigned URL for deck thumbnail upload")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<StandardResponse<CloudflareR2Service.PresignedUpload>> presignThumbnail(
+            Authentication authentication,
+            @PathVariable Long id,
+            @Parameter(description = "Content type of the file (e.g., image/jpeg, image/png)")
+            @RequestParam("contentType") String contentType) {
+        var presigned = r2Service.createDeckThumbnailPresignedUpload(id, contentType);
+        return ResponseEntity.ok(StandardResponse.<CloudflareR2Service.PresignedUpload>builder()
+                .success(true)
+                .data(presigned)
+                .build());
+    }
+
+    @PostMapping("/{id}/thumbnail/confirm")
+    @Operation(summary = "Confirm deck thumbnail upload and save to deck")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<StandardResponse<String>> confirmThumbnail(
+            Authentication authentication,
+            @PathVariable Long id,
+            @Parameter(description = "Public URL of the uploaded thumbnail")
+            @RequestParam("publicUrl") String publicUrl) {
+        User user = (User) authentication.getPrincipal();
+        String url = deckService.confirmThumbnailUpload(user, id, publicUrl);
+        return ResponseEntity.ok(StandardResponse.<String>builder()
+                .success(true)
+                .message("Deck thumbnail confirmed")
+                .data(url)
+                .build());
     }
 
     private Pageable createPageable(int page, int size, String sort) {

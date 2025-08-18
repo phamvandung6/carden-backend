@@ -425,6 +425,216 @@ public class StudyStateService {
     }
 
     /**
+     * Get the next available study time for a user
+     * Returns null if user has cards currently due or new cards available
+     */
+    public LocalDateTime getNextAvailableStudyTime(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // If user has cards currently available, they can study now
+        if (hasCardsAvailableNow(userId)) {
+            return null; // Can study immediately
+        }
+        
+        // Find the earliest future due date
+        return studyStateRepository.findNextDueTime(userId, now).orElse(null);
+    }
+    
+    /**
+     * Check if user has any cards available to study right now
+     */
+    public boolean hasCardsAvailableNow(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Check learning cards that are due
+        List<StudyState> learningCards = studyStateRepository.findLearningCardsByUser(userId, now);
+        if (!learningCards.isEmpty()) {
+            return true;
+        }
+        
+        // Check review cards that are due
+        Long dueCardsCount = studyStateRepository.countDueCardsByUser(userId, now);
+        if (dueCardsCount > 0) {
+            return true;
+        }
+        
+        // Check new cards (existing StudyState with NEW state)
+        Page<StudyState> existingNewCards = studyStateRepository.findNewCardsByUser(userId, PageRequest.of(0, 1));
+        if (existingNewCards.hasContent()) {
+            return true;
+        }
+        
+        // Check cards without StudyState (truly new cards)
+        long cardsWithoutState = studyStateRepository.countCardsWithoutStudyState(userId);
+        return cardsWithoutState > 0;
+    }
+
+    /**
+     * Get detailed card counts for a user
+     */
+    public CardCounts getDetailedCardCounts(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Count learning cards (due now)
+        List<StudyState> learningCards = studyStateRepository.findLearningCardsByUser(userId, now);
+        int learningCount = learningCards.size();
+        
+        // Count review cards (due now, excluding learning cards)
+        Long totalDue = studyStateRepository.countDueCardsByUser(userId, now);
+        int reviewCount = Math.max(0, (int) (totalDue - learningCount));
+        
+        // Count new cards (existing StudyState with NEW state)
+        Page<StudyState> existingNewCards = studyStateRepository.findNewCardsByUser(userId, PageRequest.of(0, Integer.MAX_VALUE));
+        int existingNewCount = (int) existingNewCards.getTotalElements();
+        
+        // Count truly new cards (without StudyState)
+        long cardsWithoutState = studyStateRepository.countCardsWithoutStudyState(userId);
+        int totalNewCards = existingNewCount + (int) cardsWithoutState;
+        
+        return new CardCounts(totalNewCards, reviewCount, learningCount, (int) totalDue.longValue());
+    }
+
+    /**
+     * Get detailed card counts for a specific deck
+     */
+    public CardCounts getDetailedCardCountsByDeck(Long userId, Long deckId) {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Count learning cards for this deck
+        Long learningCount = studyStateRepository.countLearningCardsByUserAndDeck(userId, deckId, now);
+        
+        // Count total due cards for this deck
+        Long totalDue = studyStateRepository.countDueCardsByUserAndDeck(userId, deckId, now);
+        
+        // Count review cards (due cards excluding learning cards)
+        int reviewCount = Math.max(0, (int) (totalDue - learningCount));
+        
+        // Count new cards for this deck
+        Long existingNewCount = studyStateRepository.countNewCardsByUserAndDeck(userId, deckId);
+        Long cardsWithoutState = studyStateRepository.countCardsWithoutStudyStateByDeck(userId, deckId);
+        int totalNewCards = (int) (existingNewCount + cardsWithoutState);
+        
+        return new CardCounts(totalNewCards, reviewCount, learningCount.intValue(), totalDue.intValue());
+    }
+
+    /**
+     * Get next available study time for a specific deck
+     */
+    public LocalDateTime getNextAvailableStudyTimeByDeck(Long userId, Long deckId) {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // If user has cards currently available in this deck, they can study now
+        if (hasCardsAvailableNowByDeck(userId, deckId)) {
+            return null; // Can study immediately
+        }
+        
+        // Find the earliest future due date for this deck
+        return studyStateRepository.findNextDueTimeByDeck(userId, deckId, now).orElse(null);
+    }
+
+    /**
+     * Check if user has any cards available to study right now in a specific deck
+     */
+    public boolean hasCardsAvailableNowByDeck(Long userId, Long deckId) {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Check if deck has learning cards due
+        Long learningCount = studyStateRepository.countLearningCardsByUserAndDeck(userId, deckId, now);
+        if (learningCount > 0) {
+            return true;
+        }
+        
+        // Check if deck has review cards due
+        Long dueCount = studyStateRepository.countDueCardsByUserAndDeck(userId, deckId, now);
+        if (dueCount > 0) {
+            return true;
+        }
+        
+        // Check if deck has new cards available
+        Long newCardsCount = studyStateRepository.countNewCardsByUserAndDeck(userId, deckId);
+        Long cardsWithoutState = studyStateRepository.countCardsWithoutStudyStateByDeck(userId, deckId);
+        
+        return (newCardsCount + cardsWithoutState) > 0;
+    }
+
+    /**
+     * Calculate deck statistics for a user
+     */
+    public DeckStatistics calculateDeckStatistics(Long userId, Long deckId) {
+        Object[] stats = studyStateRepository.calculateDeckStatistics(userId, deckId);
+        
+        if (stats != null && stats.length >= 6) {
+            Long totalCards = (Long) stats[0];
+            Long studiedCards = (Long) stats[1];
+            Double avgAccuracy = (Double) stats[2];
+            Long masteredCards = (Long) stats[3];
+            Long totalReviews = (Long) stats[4];
+            Long correctReviews = (Long) stats[5];
+            
+            double completionRate = totalCards > 0 ? (double) studiedCards / totalCards * 100.0 : 0.0;
+            double averageAccuracy = avgAccuracy != null ? avgAccuracy : 0.0;
+            
+            return new DeckStatistics(
+                    totalCards.intValue(),
+                    studiedCards.intValue(),
+                    masteredCards.intValue(),
+                    averageAccuracy,
+                    completionRate,
+                    totalReviews.intValue(),
+                    correctReviews.intValue()
+            );
+        }
+        
+        // Fallback if query returns no results
+        Long totalCards = studyStateRepository.countCardsByDeck(deckId);
+        return new DeckStatistics(
+                totalCards.intValue(), 0, 0, 0.0, 0.0, 0, 0
+        );
+    }
+
+    /**
+     * Data class for deck statistics
+     */
+    public static class DeckStatistics {
+        public final int totalCards;
+        public final int studiedCards;
+        public final int masteredCards;
+        public final double averageAccuracy;
+        public final double completionRate;
+        public final int totalReviews;
+        public final int correctReviews;
+        
+        public DeckStatistics(int totalCards, int studiedCards, int masteredCards, 
+                            double averageAccuracy, double completionRate,
+                            int totalReviews, int correctReviews) {
+            this.totalCards = totalCards;
+            this.studiedCards = studiedCards;
+            this.masteredCards = masteredCards;
+            this.averageAccuracy = averageAccuracy;
+            this.completionRate = completionRate;
+            this.totalReviews = totalReviews;
+            this.correctReviews = correctReviews;
+        }
+    }
+
+    /**
+     * Data class for card counts
+     */
+    public static class CardCounts {
+        public final int newCards;
+        public final int reviewCards;
+        public final int learningCards;
+        public final int totalDue;
+        
+        public CardCounts(int newCards, int reviewCards, int learningCards, int totalDue) {
+            this.newCards = newCards;
+            this.reviewCards = reviewCards;
+            this.learningCards = learningCards;
+            this.totalDue = totalDue;
+        }
+    }
+
+    /**
      * Calculate user statistics
      */
     public UserStatistics calculateUserStatistics(Long userId) {
