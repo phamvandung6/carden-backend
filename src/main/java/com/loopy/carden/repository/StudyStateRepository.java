@@ -191,4 +191,104 @@ public interface StudyStateRepository extends JpaRepository<StudyState, Long> {
            "WHERE c.deck.user.id = :userId " +
            "AND c.id NOT IN (SELECT s.card.id FROM StudyState s WHERE s.user.id = :userId)")
     long countCardsWithoutStudyState(@Param("userId") Long userId);
+
+    /**
+     * Find the earliest due date for cards that are not yet due
+     * Used to determine when user can study next
+     */
+    @Query("SELECT MIN(s.dueDate) FROM StudyState s " +
+           "WHERE s.user.id = :userId " +
+           "AND s.dueDate > :now")
+    Optional<LocalDateTime> findNextDueTime(@Param("userId") Long userId, 
+                                          @Param("now") LocalDateTime now);
+
+    /**
+     * Count cards that will be due at a specific time
+     */
+    @Query("SELECT COUNT(s) FROM StudyState s " +
+           "WHERE s.user.id = :userId " +
+           "AND s.dueDate <= :targetTime " +
+           "AND s.dueDate > :now")
+    Long countCardsDueByTime(@Param("userId") Long userId,
+                           @Param("now") LocalDateTime now,
+                           @Param("targetTime") LocalDateTime targetTime);
+
+    // ===== Deck-specific queries =====
+
+    /**
+     * Count due cards for a specific deck
+     */
+    @Query("SELECT COUNT(s) FROM StudyState s " +
+           "WHERE s.user.id = :userId " +
+           "AND s.deck.id = :deckId " +
+           "AND s.dueDate <= :now")
+    Long countDueCardsByUserAndDeck(@Param("userId") Long userId,
+                                   @Param("deckId") Long deckId,
+                                   @Param("now") LocalDateTime now);
+
+    /**
+     * Count learning cards for a specific deck
+     */
+    @Query("SELECT COUNT(s) FROM StudyState s " +
+           "WHERE s.user.id = :userId " +
+           "AND s.deck.id = :deckId " +
+           "AND s.cardState IN ('LEARNING', 'RELEARNING') " +
+           "AND s.dueDate <= :now")
+    Long countLearningCardsByUserAndDeck(@Param("userId") Long userId,
+                                        @Param("deckId") Long deckId,
+                                        @Param("now") LocalDateTime now);
+
+    /**
+     * Count new cards for a specific deck (with existing StudyState)
+     */
+    @Query("SELECT COUNT(s) FROM StudyState s " +
+           "WHERE s.user.id = :userId " +
+           "AND s.deck.id = :deckId " +
+           "AND s.cardState = 'NEW'")
+    Long countNewCardsByUserAndDeck(@Param("userId") Long userId,
+                                   @Param("deckId") Long deckId);
+
+    /**
+     * Count cards without StudyState for a specific deck
+     */
+    @Query("SELECT COUNT(c) FROM Card c " +
+           "WHERE c.deck.user.id = :userId " +
+           "AND c.deck.id = :deckId " +
+           "AND c.id NOT IN (SELECT s.card.id FROM StudyState s WHERE s.user.id = :userId)")
+    Long countCardsWithoutStudyStateByDeck(@Param("userId") Long userId,
+                                          @Param("deckId") Long deckId);
+
+    /**
+     * Find next due time for a specific deck
+     */
+    @Query("SELECT MIN(s.dueDate) FROM StudyState s " +
+           "WHERE s.user.id = :userId " +
+           "AND s.deck.id = :deckId " +
+           "AND s.dueDate > :now")
+    Optional<LocalDateTime> findNextDueTimeByDeck(@Param("userId") Long userId,
+                                                 @Param("deckId") Long deckId,
+                                                 @Param("now") LocalDateTime now);
+
+    // ===== Deck statistics queries =====
+
+    /**
+     * Get deck statistics for a user
+     */
+    @Query("SELECT " +
+           "COUNT(c), " +                           // total cards in deck
+           "COUNT(s), " +                          // cards with study state
+           "AVG(s.accuracyRate), " +               // average accuracy
+           "COUNT(CASE WHEN s.cardState = 'REVIEW' AND s.accuracyRate >= 85 THEN 1 END), " + // mastered cards
+           "SUM(s.totalReviews), " +               // total reviews
+           "SUM(s.correctReviews) " +              // correct reviews
+           "FROM Card c " +
+           "LEFT JOIN StudyState s ON c.id = s.card.id AND s.user.id = :userId " +
+           "WHERE c.deck.id = :deckId")
+    Object[] calculateDeckStatistics(@Param("userId") Long userId, @Param("deckId") Long deckId);
+
+    /**
+     * Count total cards in a deck
+     */
+    @Query("SELECT COUNT(c) FROM Card c WHERE c.deck.id = :deckId")
+    Long countCardsByDeck(@Param("deckId") Long deckId);
 }

@@ -139,6 +139,37 @@ public class ReviewSessionService {
     }
 
     /**
+     * Update session progress (for type-answer and multiple-choice modes)
+     */
+    public ReviewSession updateSessionProgress(Long userId, int cardsStudied, int correctCards) {
+        Optional<ReviewSession> activeSessionOpt = getActiveSession(userId);
+        if (activeSessionOpt.isEmpty()) {
+            log.debug("No active session found for user {} to update progress", userId);
+            return null;
+        }
+        
+        ReviewSession session = activeSessionOpt.get();
+        
+        // Update progress incrementally
+        session.setCardsStudied(session.getCardsStudied() + cardsStudied);
+        session.setCardsCorrect(session.getCardsCorrect() + correctCards);
+        
+        // Recalculate accuracy rate
+        session.updateAccuracyRate();
+        
+        // Update duration
+        long durationMinutes = ChronoUnit.MINUTES.between(session.getSessionDate(), LocalDateTime.now());
+        session.setDurationMinutes((int) durationMinutes);
+        
+        ReviewSession updatedSession = reviewSessionRepository.save(session);
+        
+        log.debug("Updated session {} progress: +{} cards, +{} correct", 
+                session.getId(), cardsStudied, correctCards);
+        
+        return updatedSession;
+    }
+
+    /**
      * Complete an active session
      */
     public ReviewSession completeSession(Long sessionId, Long userId) {

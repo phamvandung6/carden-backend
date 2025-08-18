@@ -94,6 +94,16 @@ public class PracticeService {
     public SessionSummaryDto completeSession(Long sessionId, Long userId) {
         ReviewSession completedSession = reviewSessionService.completeSession(sessionId, userId);
         
+        // Calculate next study time information
+        LocalDateTime nextStudyTime = studyStateService.getNextAvailableStudyTime(userId);
+        boolean canStudyNow = studyStateService.hasCardsAvailableNow(userId);
+        Long minutesUntilNext = null;
+        
+        if (nextStudyTime != null && !canStudyNow) {
+            LocalDateTime now = LocalDateTime.now();
+            minutesUntilNext = java.time.Duration.between(now, nextStudyTime).toMinutes();
+        }
+        
         return SessionSummaryDto.builder()
                 .sessionId(completedSession.getId())
                 .totalCards(completedSession.getCardsStudied())
@@ -105,6 +115,9 @@ public class PracticeService {
                 .relearningCards(completedSession.getRelearningCards())
                 .sessionStats(completedSession.getSessionStats())
                 .completedAt(LocalDateTime.now())
+                .nextAvailableStudyTime(nextStudyTime)
+                .minutesUntilNextCard(minutesUntilNext)
+                .canStudyNow(canStudyNow)
                 .build();
     }
 
@@ -193,15 +206,38 @@ public class PracticeService {
      */
     @Transactional(readOnly = true)
     public DueCardsCountDto getDueCardsCount(Long userId, Long deckId) {
-        long totalDue = studyStateService.getDueCardsCount(userId);
+        // Get detailed card counts (deck-specific or global)
+        StudyStateService.CardCounts cardCounts;
+        LocalDateTime nextStudyTime;
+        boolean hasCardsAvailable;
         
-        // TODO: Implement deck-specific counting if deckId is provided
+        if (deckId != null) {
+            // Deck-specific counting
+            cardCounts = studyStateService.getDetailedCardCountsByDeck(userId, deckId);
+            nextStudyTime = studyStateService.getNextAvailableStudyTimeByDeck(userId, deckId);
+            hasCardsAvailable = studyStateService.hasCardsAvailableNowByDeck(userId, deckId);
+        } else {
+            // Global counting
+            cardCounts = studyStateService.getDetailedCardCounts(userId);
+            nextStudyTime = studyStateService.getNextAvailableStudyTime(userId);
+            hasCardsAvailable = studyStateService.hasCardsAvailableNow(userId);
+        }
+        
+        // Calculate minutes until next card is available
+        Long minutesUntilNext = null;
+        if (nextStudyTime != null && !hasCardsAvailable) {
+            LocalDateTime now = LocalDateTime.now();
+            minutesUntilNext = java.time.Duration.between(now, nextStudyTime).toMinutes();
+        }
         
         return DueCardsCountDto.builder()
-                .totalDue((int) totalDue)
-                .newCards(0) // TODO: Implement
-                .reviewCards(0) // TODO: Implement
-                .learningCards(0) // TODO: Implement
+                .totalDue(cardCounts.totalDue)
+                .newCards(cardCounts.newCards)
+                .reviewCards(cardCounts.reviewCards)
+                .learningCards(cardCounts.learningCards)
+                .nextCardAvailableAt(nextStudyTime)
+                .minutesUntilNext(minutesUntilNext)
+                .hasCardsAvailable(hasCardsAvailable)
                 .build();
     }
 
@@ -232,15 +268,15 @@ public class PracticeService {
      */
     @Transactional(readOnly = true)
     public DeckStatisticsDto getDeckStatistics(Long userId, Long deckId) {
-        // TODO: Implement deck-specific statistics
+        StudyStateService.DeckStatistics stats = studyStateService.calculateDeckStatistics(userId, deckId);
         
         return DeckStatisticsDto.builder()
                 .deckId(deckId)
-                .totalCards(0)
-                .studiedCards(0)
-                .masteredCards(0)
-                .averageAccuracy(0.0)
-                .completionRate(0.0)
+                .totalCards(stats.totalCards)
+                .studiedCards(stats.studiedCards)
+                .masteredCards(stats.masteredCards)
+                .averageAccuracy(stats.averageAccuracy)
+                .completionRate(stats.completionRate)
                 .build();
     }
 
@@ -324,8 +360,8 @@ public class PracticeService {
         StudyState updatedState = studyStateService.processReview(
                 submission.getCardId(), userId, grade, LocalDateTime.now());
         
-        // Update session statistics (TODO: Add this method to ReviewSessionService)
-        // reviewSessionService.updateSessionProgress(userId, 1, validation.isCorrect() ? 1 : 0);
+        // Update session statistics
+        reviewSessionService.updateSessionProgress(userId, 1, validation.isCorrect() ? 1 : 0);
         
         log.info("Type-answer review processed for user {} card {} with grade {} (similarity: {:.2f})", 
                 userId, submission.getCardId(), grade, validation.getSimilarity());
@@ -361,8 +397,8 @@ public class PracticeService {
         StudyState updatedState = studyStateService.processReview(
                 submission.getCardId(), userId, grade, LocalDateTime.now());
         
-        // Update session statistics (TODO: Add this method to ReviewSessionService)
-        // reviewSessionService.updateSessionProgress(userId, 1, isCorrect ? 1 : 0);
+        // Update session statistics
+        reviewSessionService.updateSessionProgress(userId, 1, isCorrect ? 1 : 0);
         
         log.info("Multiple choice review processed for user {} card {} with grade {} (option: {})", 
                 userId, submission.getCardId(), grade, submission.getSelectedOption());

@@ -22,4 +22,9 @@ public class SessionSummaryDto {
     private Integer relearningCards;
     private SessionStats sessionStats;
     private LocalDateTime completedAt;
+    
+    // Next study time information
+    private LocalDateTime nextAvailableStudyTime;
+    private Long minutesUntilNextCard;
+    private Boolean canStudyNow;
 }
