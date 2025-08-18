@@ -5,6 +5,7 @@ import com.loopy.carden.security.JwtAccessDeniedHandler;
 import com.loopy.carden.security.JwtAuthenticationEntryPoint;
 import com.loopy.carden.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -41,6 +42,9 @@ public class SecurityConfig {
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService userDetailsService;
+
+    @Value("${app.security.allowed-origins:http://localhost:3000,http://localhost:4200,http://localhost:5173}")
+    private String allowedOrigins;
 
     /**
      * Password encoder bean using BCrypt with strength 12
@@ -119,19 +123,19 @@ public class SecurityConfig {
 
     /**
      * CORS configuration to allow frontend access
+     * Reads allowed origins from environment variable for flexible deployment
      * @return CorsConfigurationSource
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Allow specific origins (update these for production)
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:3000",     // React development
-            "http://localhost:4200",     // Angular development
-            "http://localhost:5173",     // Vite development
-            "https://*.your-domain.com"  // Production domain
-        ));
+        // Parse allowed origins from environment variable
+        String[] origins = allowedOrigins.split(",");
+        for (int i = 0; i < origins.length; i++) {
+            origins[i] = origins[i].trim();
+        }
+        configuration.setAllowedOriginPatterns(Arrays.asList(origins));
         
         // Allow specific HTTP methods
         configuration.setAllowedMethods(Arrays.asList(
