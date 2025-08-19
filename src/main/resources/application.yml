@@ -27,7 +27,7 @@ app:
     secret: ${JWT_SECRET:YXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGZhc2RmYXNkZmFzZGY=}
     access-token-expiration: PT60M # 60 minutes (longer for now)
   security:
-    allowed-origins: ${APP_SECURITY_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200,http://localhost:5173}
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200,http://localhost:5173}
 
 # Management endpoints
 management:
