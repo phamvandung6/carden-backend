@@ -135,7 +135,12 @@ public class SecurityConfig {
         for (int i = 0; i < origins.length; i++) {
             origins[i] = origins[i].trim();
         }
-        configuration.setAllowedOriginPatterns(Arrays.asList(origins));
+        
+        // Log the allowed origins for debugging
+        System.out.println("CORS Allowed Origins: " + Arrays.toString(origins));
+        
+        // Use setAllowedOrigins instead of setAllowedOriginPatterns for exact matching
+        configuration.setAllowedOrigins(Arrays.asList(origins));
         
         // Allow specific HTTP methods
         configuration.setAllowedMethods(Arrays.asList(
