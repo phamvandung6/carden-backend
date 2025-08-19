@@ -91,6 +91,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> 
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                    // Allow OPTIONS requests for CORS preflight
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    
                     // Public authentication endpoints (only login/register/health)
                     .requestMatchers(HttpMethod.POST, "/v1/auth/login").permitAll()
                     .requestMatchers(HttpMethod.POST, "/v1/auth/register").permitAll()
@@ -139,24 +142,26 @@ public class SecurityConfig {
         // Log the allowed origins for debugging
         System.out.println("CORS Allowed Origins: " + Arrays.toString(origins));
         
-        // Use setAllowedOrigins instead of setAllowedOriginPatterns for exact matching
-        configuration.setAllowedOrigins(Arrays.asList(origins));
+        // For development/testing: allow patterns for flexible IP addresses
+        // Use setAllowedOriginPatterns for pattern matching (safer than "*")
+        configuration.setAllowedOriginPatterns(Arrays.asList(origins));
         
         // Allow specific HTTP methods
         configuration.setAllowedMethods(Arrays.asList(
             "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
         
-        // Allow specific headers
+        // Allow all common headers
         configuration.setAllowedHeaders(Arrays.asList(
             "Authorization", "Content-Type", "X-Requested-With", 
             "Accept", "Origin", "Access-Control-Request-Method", 
-            "Access-Control-Request-Headers"
+            "Access-Control-Request-Headers", "Cache-Control"
         ));
         
         // Expose specific headers
         configuration.setExposedHeaders(Arrays.asList(
-            "Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"
+            "Access-Control-Allow-Origin", "Access-Control-Allow-Credentials",
+            "Authorization"
         ));
         
         configuration.setAllowCredentials(true);
