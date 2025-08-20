@@ -1,7 +1,7 @@
-google-generativeai
+google-cloud-aiplatform
 langchain
 langchain-core
-langchain-google-genai
+langchain-google-vertexai
 pydantic
 sqlalchemy
 psycopg2-binary

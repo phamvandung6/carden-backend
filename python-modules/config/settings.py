@@ -9,9 +9,24 @@ load_dotenv()
 
 
 class Settings:
-    # Google Gemini API Configuration
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    # Google Cloud / Vertex AI Configuration
+    GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT")
+    GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION", "asia-southeast1")  # Singapore region
     GEMINI_MODEL = "gemini-2.0-flash-exp"  # Latest Gemini model for content generation
+    
+    # Legacy Gemini API Configuration (for fallback)
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")  # For LangChain compatibility
+    GEMINI_API_ENDPOINT = os.getenv("GEMINI_API_ENDPOINT", "https://generativelanguage.googleapis.com")
+    
+    # Proxy Configuration (for region restrictions)
+    HTTP_PROXY = os.getenv("HTTP_PROXY")
+    HTTPS_PROXY = os.getenv("HTTPS_PROXY")
+    
+    @property
+    def API_KEY(self):
+        """Get API key - prioritize GOOGLE_API_KEY for LangChain compatibility"""
+        return self.GOOGLE_API_KEY or self.GEMINI_API_KEY
 
     # Database Configuration
     DATABASE_URL = os.getenv(

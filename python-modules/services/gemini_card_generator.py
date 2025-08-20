@@ -3,8 +3,11 @@ Gemini AI-powered card generation service
 """
 import json
 import logging
-import google.generativeai as genai
+import os
+import httpx
 from typing import List, Optional
+from vertexai.generative_models import GenerativeModel
+import vertexai
 from config.settings import settings
 from models.card_models import (
     CardGenerationRequest,
@@ -23,13 +26,37 @@ class GeminiCardGenerator:
     """Service for generating cards using Google Gemini API"""
     
     def __init__(self):
-        """Initialize Gemini API client"""
-        if not settings.GEMINI_API_KEY:
-            raise ValueError("GEMINI_API_KEY không được cấu hình")
+        """Initialize Vertex AI client"""
+        if not settings.GOOGLE_CLOUD_PROJECT:
+            raise ValueError("GOOGLE_CLOUD_PROJECT không được cấu hình")
         
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel(settings.GEMINI_MODEL)
-        logger.info(f"Đã khởi tạo Gemini model: {settings.GEMINI_MODEL}")
+        # Configure proxy if available
+        if settings.HTTP_PROXY or settings.HTTPS_PROXY:
+            proxy_config = {}
+            if settings.HTTP_PROXY:
+                proxy_config['http://'] = settings.HTTP_PROXY
+            if settings.HTTPS_PROXY:
+                proxy_config['https://'] = settings.HTTPS_PROXY
+            
+            # Set environment variables for requests library
+            if settings.HTTP_PROXY:
+                os.environ['HTTP_PROXY'] = settings.HTTP_PROXY
+            if settings.HTTPS_PROXY:
+                os.environ['HTTPS_PROXY'] = settings.HTTPS_PROXY
+            
+            logger.info(f"Configured proxy: {proxy_config}")
+        
+        # Configure Vertex AI
+        try:
+            vertexai.init(
+                project=settings.GOOGLE_CLOUD_PROJECT,
+                location=settings.GOOGLE_CLOUD_REGION
+            )
+            self.model = GenerativeModel(settings.GEMINI_MODEL)
+            logger.info(f"Đã khởi tạo Vertex AI model: {settings.GEMINI_MODEL}")
+        except Exception as e:
+            logger.error(f"Failed to initialize Vertex AI client: {str(e)}")
+            raise
     
     async def generate_cards(self, request: CardGenerationRequest) -> BulkCardGenerationResponse:
         """
@@ -159,26 +186,30 @@ Hãy tạo {request.count} thẻ đa dạng và phù hợp với chủ đề "{r
         return prompt
     
     async def _call_gemini_api(self, prompt: str) -> str:
-        """Call Gemini API with prompt"""
+        """Call Vertex AI with prompt"""
         try:
+            from vertexai.generative_models import GenerationConfig
+            
+            generation_config = GenerationConfig(
+                candidate_count=1,
+                temperature=0.7,
+                max_output_tokens=8192,
+                response_mime_type="application/json"
+            )
+            
             response = self.model.generate_content(
                 prompt,
-                generation_config=genai.types.GenerationConfig(
-                    candidate_count=1,
-                    temperature=0.7,
-                    max_output_tokens=8192,
-                    response_mime_type="application/json"
-                )
+                generation_config=generation_config
             )
             
             if not response.text:
-                raise ValueError("Gemini API trả về phản hồi trống")
+                raise ValueError("Vertex AI trả về phản hồi trống")
             
             return response.text
             
         except Exception as e:
-            logger.error(f"Lỗi khi gọi Gemini API: {str(e)}")
-            raise Exception(f"Lỗi Gemini API: {str(e)}")
+            logger.error(f"Lỗi khi gọi Vertex AI: {str(e)}")
+            raise Exception(f"Lỗi Vertex AI: {str(e)}")
     
     def _parse_gemini_response(self, response_text: str) -> List[dict]:
         """Parse JSON response from Gemini"""
@@ -205,7 +236,7 @@ Hãy tạo {request.count} thẻ đa dạng và phù hợp với chủ đề "{r
         except json.JSONDecodeError as e:
             logger.error(f"Lỗi parse JSON: {str(e)}")
             logger.error(f"Response text: {response_text}")
-            raise Exception(f"Lỗi parse JSON từ Gemini: {str(e)}")
+            raise Exception(f"Lỗi parse JSON từ Vertex AI: {str(e)}")
     
     def _convert_to_generated_cards(
         self, 

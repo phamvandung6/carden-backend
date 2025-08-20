@@ -10,7 +10,7 @@ from enum import Enum
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_vertexai import ChatVertexAI
 from pydantic import BaseModel, Field
 
 from config.settings import settings
@@ -59,9 +59,10 @@ class LangChainContentValidator:
     
     def __init__(self):
         """Initialize LangChain components"""
-        self.llm = ChatGoogleGenerativeAI(
-            model=settings.GEMINI_MODEL,
-            google_api_key=settings.GEMINI_API_KEY,
+        self.llm = ChatVertexAI(
+            model_name=settings.GEMINI_MODEL,
+            project=settings.GOOGLE_CLOUD_PROJECT,
+            location=settings.GOOGLE_CLOUD_REGION,
             temperature=0.1,  # Low temperature for consistent validation
             max_output_tokens=1024
         )
