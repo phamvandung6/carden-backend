@@ -1,0 +1,12 @@
+google-generativeai
+langchain
+langchain-core
+langchain-google-genai
+pydantic
+sqlalchemy
+psycopg2-binary
+python-dotenv
+fastapi
+uvicorn
+httpx
+aiofiles
