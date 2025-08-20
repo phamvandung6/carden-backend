@@ -12,7 +12,7 @@ class Settings:
     # Google Cloud / Vertex AI Configuration
     GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT")
     GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION", "asia-southeast1")  # Singapore region
-    GEMINI_MODEL = "gemini-2.0-flash-exp"  # Latest Gemini model for content generation
+    GEMINI_MODEL = "gemini-2.5-flash"  # Latest Gemini model for content generation
     
     # Legacy Gemini API Configuration (for fallback)
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
