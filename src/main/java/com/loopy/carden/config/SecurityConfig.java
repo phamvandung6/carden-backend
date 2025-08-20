@@ -108,6 +108,7 @@ public class SecurityConfig {
                     // Documentation and monitoring
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                     .requestMatchers("/actuator/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/v1/bulk-generation/health").permitAll()
 
                     // All other requests require authentication
                     .anyRequest().authenticated()

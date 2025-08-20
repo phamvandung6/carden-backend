@@ -21,6 +21,16 @@ server:
   servlet:
     context-path: /api
 
+# Carden specific configurations
+carden:
+  python:
+    service:
+      url: ${PYTHON_SERVICE_URL:http://localhost:8001}
+      enabled: ${PYTHON_SERVICE_ENABLED:true}
+      timeout:
+        connect: 10s
+        read: 2m
+
 # Application specific configuration
 app:
   jwt:

@@ -4,10 +4,13 @@ import com.loopy.carden.dto.StandardResponse;
 import com.loopy.carden.dto.card.CardCreateDto;
 import com.loopy.carden.dto.card.CardResponseDto;
 import com.loopy.carden.dto.card.CardUpdateDto;
+import com.loopy.carden.dto.card.BulkCardGenerationRequestDto;
+import com.loopy.carden.dto.card.BulkCardGenerationResponseDto;
 import com.loopy.carden.entity.Card;
 import com.loopy.carden.entity.User;
 import com.loopy.carden.mapper.CardMapper;
 import com.loopy.carden.service.CardService;
+import com.loopy.carden.service.BulkCardGenerationService;
 import com.loopy.carden.service.storage.CloudflareR2Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,6 +37,7 @@ import java.util.List;
 public class CardController {
 
     private final CardService cardService;
+    private final BulkCardGenerationService bulkCardGenerationService;
     private final CloudflareR2Service r2Service;
 
     @PostMapping("/decks/{deckId}/cards")
@@ -238,5 +242,59 @@ public class CardController {
         }
         
         return PageRequest.of(page, size, Sort.by(direction, property));
+    }
+
+    @PostMapping("/decks/{deckId}/cards/bulk-generate")
+    @Operation(summary = "Generate multiple cards using AI for a deck", 
+               description = "Generate up to 15 cards at once using Google Gemini AI based on a topic and language preferences")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<StandardResponse<BulkCardGenerationResponseDto>> generateCardsInBulk(
+            Authentication authentication,
+            @PathVariable Long deckId,
+            @Valid @RequestBody BulkCardGenerationRequestDto request) {
+        
+        User user = (User) authentication.getPrincipal();
+        
+        // Ensure request uses the correct deck ID from path
+        request.setDeckId(deckId);
+        
+        // Generate cards using AI service
+        BulkCardGenerationResponseDto response = bulkCardGenerationService.generateCards(user, request);
+        
+        if (response.getSuccess()) {
+            return ResponseEntity.ok(StandardResponse.success(
+                    "Successfully generated " + response.getTotalSaved() + " cards",
+                    response
+            ));
+        } else {
+            return ResponseEntity.badRequest().body(StandardResponse.<BulkCardGenerationResponseDto>builder()
+                    .success(false)
+                    .message(response.getMessage())
+                    .data(response)
+                    .build());
+        }
+    }
+
+    @GetMapping("/bulk-generation/health")
+    @Operation(summary = "Check bulk card generation service health",
+               description = "Check if the AI card generation service is available and working")
+    public ResponseEntity<StandardResponse<Boolean>> checkBulkGenerationHealth() {
+        
+        boolean isAvailable = bulkCardGenerationService.isServiceAvailable();
+        
+        if (isAvailable) {
+            return ResponseEntity.ok(StandardResponse.success(
+                    "Bulk card generation service is available",
+                    true
+            ));
+        } else {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(StandardResponse.<Boolean>builder()
+                            .success(false)
+                            .message("Bulk card generation service is currently unavailable")
+                            .data(false)
+                            .build());
+        }
     }
 }

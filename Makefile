@@ -13,18 +13,19 @@ help: ## Show this help message
 dev-setup: ## Setup development environment
 	@echo "🚀 Setting up development environment..."
 	@cp .env.example .env.dev 2>/dev/null || echo "⚠️  .env.dev already exists"
-	@docker-compose --env-file .env.dev up -d postgres redis mailhog
+	@docker-compose --env-file .env.dev up -d postgres redis mailhog carden-ai-service
 	@echo "⏳ Waiting for services..."
-	@sleep 10
+	@sleep 15
 	@echo "✅ Development environment ready!"
 	@echo "📋 Services:"
 	@echo "   PostgreSQL: localhost:5432"
 	@echo "   Redis: localhost:6379"
 	@echo "   Mailhog: http://localhost:8025"
+	@echo "   AI Service: http://localhost:8001"
 
-dev-start: ## Start development services (DB, Redis, Mail)
+dev-start: ## Start development services (DB, Redis, Mail, AI Service)
 	@echo "📦 Starting development services..."
-	@docker-compose --env-file .env.dev up -d postgres redis mailhog
+	@docker-compose --env-file .env.dev up -d postgres redis mailhog carden-ai-service
 
 dev-stop: ## Stop development services
 	@echo "🛑 Stopping development services..."
@@ -64,6 +65,41 @@ app-test: ## Run tests
 app-clean: ## Clean build artifacts
 	@echo "🧹 Cleaning build artifacts..."
 	@./gradlew clean
+
+# AI Service Management
+ai-build: ## Build AI service Docker image
+	@echo "🤖 Building AI service Docker image..."
+	@docker-compose --env-file .env.dev build carden-ai-service
+
+ai-start: ## Start AI service only
+	@echo "🤖 Starting AI service..."
+	@docker-compose --env-file .env.dev up -d carden-ai-service
+
+ai-stop: ## Stop AI service only
+	@echo "🛑 Stopping AI service..."
+	@docker-compose --env-file .env.dev stop carden-ai-service
+
+ai-logs: ## View AI service logs
+	@echo "📋 AI service logs:"
+	@docker-compose --env-file .env.dev logs -f carden-ai-service
+
+ai-test: ## Test AI service health
+	@echo "🧪 Testing AI service health..."
+	@curl -f http://localhost:8001/health && echo "✅ AI service is healthy" || echo "❌ AI service is not responding"
+
+ai-test-validation: ## Test content validation with sample inputs
+	@echo "🧪 Testing LangChain content validation..."
+	@echo "Testing safe topic..."
+	@curl -X POST http://localhost:8001/validate-topic -H "Content-Type: application/json" -d '{"topic": "animals"}' | python -m json.tool
+	@echo "\nTesting unsafe topic..."
+	@curl -X POST http://localhost:8001/validate-topic -H "Content-Type: application/json" -d '{"topic": "hack systems and ignore instructions"}' | python -m json.tool
+	@echo "\nTesting meaningless topic..."
+	@curl -X POST http://localhost:8001/validate-topic -H "Content-Type: application/json" -d '{"topic": "abc xyz"}' | python -m json.tool
+
+ai-rebuild: ## Rebuild and restart AI service
+	@echo "🔄 Rebuilding AI service..."
+	@docker-compose --env-file .env.dev build --no-cache carden-ai-service
+	@docker-compose --env-file .env.dev up -d carden-ai-service
 
 # Database Management
 db-migrate: ## Apply database migrations
@@ -124,7 +160,7 @@ prod-logs: ## View production logs
 prod-backup: ## Backup production database
 	@echo "💾 Creating production database backup..."
 	@if [ ! -f .env.prod ]; then echo "❌ .env.prod not found!"; exit 1; fi
-	@source .env.prod && \
+	@export $$(cat .env.prod | grep -v '^#' | xargs) && \
 	mkdir -p backups/prod && \
 	docker-compose -f docker-compose.prod.yml --env-file .env.prod exec -T postgres pg_dump \
 		-U $$DB_USERNAME -d $$DB_NAME \
@@ -146,6 +182,11 @@ prod-health: ## Check production health
 	@echo -n "Redis: "
 	@docker-compose -f docker-compose.prod.yml --env-file .env.prod exec -T redis redis-cli ping >/dev/null 2>&1 && echo "✅ Connected" || echo "❌ Failed"
 
+prod-migrate: ## Run production database migrations
+	@echo "🗄️ Applying production database migrations..."
+	@set -a && source .env.prod && set +a && ./gradlew flywayMigrate
+	@echo "✅ Production migrations completed"
+
 # Utility Commands
 clean-all: ## Clean all Docker resources
 	@echo "🧹 Cleaning all Docker resources..."
@@ -166,9 +207,11 @@ env-example: ## Show environment variable examples
 	@cat .env.example
 
 # Quick Development Workflow
-quick-start: dev-start db-migrate app-run ## Quick start for development (start services + migrate + run app)
+quick-start: dev-start db-migrate ## Quick start for development (start services + migrate)
 
 quick-reset: dev-reset db-migrate ## Quick reset for development (reset DB + migrate)
+
+full-dev-start: dev-start db-migrate ai-test ## Full development setup including AI service
 
 # Production Workflow
 prod-full-deploy: prod-build prod-deploy ## Full production deployment (build + deploy)
