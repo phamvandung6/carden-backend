@@ -68,6 +68,9 @@ services:
     container_name: carden-ai-service
     restart: unless-stopped
     environment:
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      GOOGLE_CLOUD_REGION: ${GOOGLE_CLOUD_REGION:-asia-southeast1}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/keys/gcp-sa.json
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       DATABASE_URL: postgresql://${DB_USERNAME}:${DB_PASSWORD}@postgres:5432/carden_prod
       LOG_LEVEL: INFO
@@ -84,6 +87,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    volumes:
+      - ${GCP_SA_JSON_PATH:-/opt/cardemy/keys/gcp-sa.json}:/app/keys/gcp-sa.json:ro
 
   # PostgreSQL Database
   postgres:
